@@ -564,7 +564,7 @@ export default function App() {
                                     <div style={{ flex: 1, overflowY: 'auto', color: '#d1d5db', fontSize: '13px', lineHeight: '1.6', paddingRight: '5px' }}>
                                         <p><b>1. Quy định về tài khoản định danh:</b> Hệ thống yêu cầu bắt buộc người sử dụng phải đăng ký bằng email chính thức của trường Đại học Bách khoa Hà Nội (@hust.edu.vn hoặc @sis.hust.edu.vn).</p>
                                         <p><b>2. Trách nhiệm bảo mật:</b> Người dùng chịu trách nhiệm tuyệt đối trong việc bảo mật mật khẩu và mã xác thực MFA. Không chia sẻ thông tin tài khoản cho người khác.</p>
-                                        <p><b>3. Vận hành thiết bị:</b> Việc đặt lịch thiết bị và đề xuất mua sắm phải tuân thủ nghiêm ngặt nội quy an toàn phòng thí nghiệm tại Tòa nhà C5.</p>
+                                        <p><b>3. Vận hành thiết bị:</b> Việc đặt lịch thiết bị và đề xuất mua sắm phải tuân thủ nghiêm ngặt nội quy an toàn phòng thí nghiệm tại Phòng 211-C5</p>
                                         <p><b>4. Bảo mật dữ liệu:</b> Thông tin cá nhân và kết quả nghiên cứu được lưu trữ an toàn, cam kết không chia sẻ với bên thứ ba ngoài ban quản lý phòng thí nghiệm.</p>
                                     </div>
                                     <button 
