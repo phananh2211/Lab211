@@ -580,7 +580,7 @@ export default function App() {
                     ) : (
                         <div className="fade-in-box" style={{ textAlign: 'center', color: 'white', maxWidth: '600px', padding: '20px' }}>
                             <h1 style={{ fontSize: '38px', fontWeight: '900', marginBottom: '16px', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>Chào mừng đến với Hệ thống Quản lý Lab 211</h1>
-                            <p style={{ fontSize: '16px', color: '#e5e7eb', marginBottom: '28px', lineHeight: '1.6', textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>Nền tảng thông minh phục vụ nghiên cứu khoa học, vận hành thiết bị và quản lý thành viên tại Tòa nhà C5, Đại học Bách khoa Hà Nội.</p>
+                            <p style={{ fontSize: '16px', color: '#e5e7eb', marginBottom: '28px', lineHeight: '1.6', textShadow: '0 1px 5px rgba(0,0,0,0.5)' }}>Nền tảng thông minh phục vụ nghiên cứu khoa học, vận hành thiết bị và quản lý thành viên tại phòng 211 - C5, Đại học Bách khoa Hà Nội.</p>
                             <button
                                 onClick={handleOpenAuth}
                                 style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '12px', padding: '14px 32px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 10px 25px rgba(37,99,235,0.5)', transition: 'transform 0.2s' }}
