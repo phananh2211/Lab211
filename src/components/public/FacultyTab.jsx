@@ -8,7 +8,7 @@ export default function FacultyTab({ onBack }) {
         <div style={containerStyle}>
             <h2 style={headingStyle}>👨‍🏫 Giảng viên & Cán bộ Hướng dẫn</h2>
             <p style={textStyle}>
-                Đối với những thế hệ học viên cao học và sinh viên gắn bó với mái nhà chung Lab 211, các cô không chỉ là những nhà khoa học tận tụy trên bục giảng mà còn là những người thầy lớn. Nhờ sự kiên nhẫn dìu dắt của các cô, những dự án luận văn Thạc sĩ hay các bước chập chững làm quen với nghiên cứu khoa học thực chiến tại Tòa nhà C5 đều trở nên vững vàng hơn.
+                Đối với những thế hệ học viên cao học và sinh viên gắn bó với mái nhà chung Lab 211, các cô không chỉ là những nhà khoa học tận tụy trên bục giảng mà còn là những giáo viên tuyệt vời. Nhờ sự kiên nhẫn dìu dắt của các cô, những dự án luận văn Thạc sĩ hay các bước chập chững làm quen với nghiên cứu khoa học thực chiến tại Tòa nhà C5 đều trở nên vững vàng hơn.
             </p>
 
             {/* Khung ảnh kỷ niệm chung vô cùng thẩm mỹ */}
