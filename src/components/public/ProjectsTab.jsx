@@ -12,10 +12,24 @@ export default function ProjectsTab({ onBack }) {
         <div style={containerStyle}>
             <h2 style={headingStyle}>🤝 Hợp Tác & Dự Án Triển Khai</h2>
             <p style={textStyle}>
-                Lab 211 luôn chú trọng kết nối những nghiên cứu khoa học hàn lâm với việc giải quyết các bài toán kỹ thuật thực tiễn. Chúng tôi tự hào triển khai các dự án từ cấp cơ sở đến những đề tài hợp tác sâu rộng, kết hợp giữa cải tiến công nghệ vật liệu và số hóa quy trình thực nghiệm.
+                Lab 211 luôn chú trọng kết nối những nghiên cứu khoa học hàn lâm với việc giải quyết các bài toán kỹ thuật thực tiễn. Chúng tôi tự hào triển khai các dự án đa dạng từ phát triển vật liệu tiên tiến, tự động hóa đo lường cho đến công nghệ luyện kim màu và tuần hoàn tài nguyên.
             </p>
 
-            {/* Dự án 1 */}
+            {/* Dự án 1: Luyện kim màu & Tái chế chất thải (Mới thêm theo chuyên môn cô Thảo) */}
+            <div style={cardStyle} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                <div style={{...highlightBarStyle, backgroundColor: '#0ea5e9'}}></div>
+                <h3 style={titleStyle}><span>♻️</span> Thu Hồi Kim Loại & Xử Lý Chất Thải Công Nghiệp</h3>
+                <div>
+                    <span style={tagStyle}>Luyện Kim Màu</span>
+                    <span style={tagStyle}>Pin Lithium Thải</span>
+                    <span style={tagStyle}>Xử Lý Bùn Đỏ</span>
+                </div>
+                <p style={{ margin: 0, color: '#4b5563', fontSize: '14.5px', lineHeight: '1.7', textAlign: 'justify' }}>
+                    Nghiên cứu và tối ưu hóa các quy trình công nghệ hòa tách, thu hồi kim loại quý và kim loại màu từ các nguồn phế thải công nghiệp và rác thải điện tử. Tiêu biểu là các hướng tiếp cận xử lý bùn đỏ bauxite hoặc thu hồi các nguyên tố có giá trị từ phế liệu pin lithium thải, góp phần thúc đẩy mô hình kinh tế tuần hoàn và phát triển vật liệu bền vững.
+                </p>
+            </div>
+
+            {/* Dự án 2 */}
             <div style={cardStyle} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                 <div style={highlightBarStyle}></div>
                 <h3 style={titleStyle}><span>🖥️</span> Hệ Thống Tự Động Hóa Đo Lường Mỏi Gốm Áp Điện</h3>
@@ -29,7 +43,7 @@ export default function ProjectsTab({ onBack }) {
                 </p>
             </div>
 
-            {/* Dự án 2 */}
+            {/* Dự án 3 */}
             <div style={cardStyle} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                 <div style={{...highlightBarStyle, backgroundColor: '#10b981'}}></div>
                 <h3 style={titleStyle}><span>🔥</span> Tối Ưu Hóa Vi Cấu Trúc Vật Liệu Bằng Công Nghệ SPS</h3>
@@ -43,7 +57,7 @@ export default function ProjectsTab({ onBack }) {
                 </p>
             </div>
 
-            {/* Dự án 3 */}
+            {/* Dự án 4 */}
             <div style={cardStyle} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                 <div style={{...highlightBarStyle, backgroundColor: '#f59e0b'}}></div>
                 <h3 style={titleStyle}><span>📊</span> Đánh Giá Đặc Trưng Cấu Trúc Hệ Gốm Áp Điện</h3>

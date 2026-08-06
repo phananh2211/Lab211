@@ -55,9 +55,9 @@ export default function FacultyTab({ onBack }) {
                         Giảng viên / Nhóm chuyên môn: Vật liệu Kim loại màu và Compozit
                     </p>
                     <p style={{ margin: '0 0 12px 0', color: '#4b5563', fontSize: '14px', lineHeight: '1.7' }}>
-                        <b>Lĩnh vực chuyên môn:</b> Nghiên cứu và tối ưu hóa quy trình công nghệ chế tạo vật liệu kim loại màu và vật liệu compozit.
+                        <b>Lĩnh vực chuyên môn:</b> Luyện kim màu, công nghệ thu hồi và tái chế kim loại quý/kim loại màu từ phế thải công nghiệp (như xử lý bùn đỏ, hòa tách kim loại từ pin lithium thải) và nghiên cứu phát triển vật liệu compozit.
                         <br/><br/>
-                        <b>Góc nhìn học viên:</b> Nhắc đến cô Thảo là nhắc đến sự tận tâm và tỉ mỉ đến tuyệt vời trong phòng thí nghiệm. Khi chúng em đối mặt với những thách thức trong thực nghiệm — từ việc xử lý biểu đồ tinh chỉnh cấu trúc (Rietveld refinement) cho đến những mẻ mẫu không như ý khi sử dụng công nghệ thiêu kết plasma SPS — cô luôn trực tiếp đồng hành, kiên nhẫn gỡ rối từng lỗi kỹ thuật nhỏ nhất. Nguồn năng lượng tích cực và sự ân cần của cô luôn tiếp thêm sức mạnh để toàn lab hoàn thành xuất sắc các dự án nghiên cứu.
+                        <b>Góc nhìn học viên:</b> Nhắc đến cô Thảo là nhắc đến sự tận tâm và tỉ mỉ đến tuyệt vời trong phòng thí nghiệm. Khi chúng em đối mặt với những thách thức trong thực nghiệm — từ việc tối ưu hóa quy trình hòa tách dung dịch, xử lý các mẻ mẫu phức tạp cho đến việc gỡ rối từng lỗi kỹ thuật nhỏ trong quá trình phân tích — cô luôn trực tiếp đồng hành và kiên nhẫn chỉ dẫn. Nguồn năng lượng tích cực và sự ân cần của cô đã tiếp thêm rất nhiều động lực để chúng em kiên trì theo đuổi các hướng nghiên cứu tuần hoàn tài nguyên và vật liệu bền vững.
                     </p>
                     <div style={{ fontSize: '12.5px', color: '#0369a1', backgroundColor: '#e0f2fe', padding: '8px 12px', borderRadius: '8px', display: 'inline-block' }}>
                         🌐 <a href="https://smse.hust.edu.vn/vi/organs/person/Khoa-Ky-Thuat-Vat-Lieu-12/TS-Nguyen-Thi-Thao-20/" target="_blank" rel="noopener noreferrer" style={{ color: '#0369a1', fontWeight: '600', textDecoration: 'none' }}>Xem hồ sơ khoa học tại SMSE HUST</a>

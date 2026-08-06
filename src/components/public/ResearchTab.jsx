@@ -11,10 +11,10 @@ export default function ResearchTab({ onBack }) {
         <div style={containerStyle}>
             <h2 style={headingStyle}>🔬 Lĩnh Vực Nghiên Cứu Cốt Lõi</h2>
             <p style={textStyle}>
-                Tại Lab 211, các hoạt động nghiên cứu được triển khai đồng bộ từ khâu tổng hợp, chế tạo vật liệu, phân tích cấu trúc tinh thể cho đến việc phát triển các hệ thống đo lường tự động hóa. Chúng tôi tự hào mang đến những giải pháp toàn diện trong lĩnh vực Khoa học và Kỹ thuật Vật liệu.
+                Tại Lab 211, các hoạt động nghiên cứu được triển khai đồng bộ dưới sự định hướng chuyên môn của PGS. TS. Trần Vũ Diễm Ngọc và TS. Nguyễn Thị Thảo. Chúng tôi tập trung từ khâu tổng hợp vật liệu điện tử tiên tiến, luyện kim màu, tuần hoàn tài nguyên cho đến phát triển các hệ thống đo lường tự động hóa.
             </p>
 
-            {/* Hướng 1 */}
+            {/* Hướng 1: Gốm áp điện & Vật liệu điện tử (Định hướng PGS. Ngọc) */}
             <div style={cardStyle} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                 <h3 style={titleStyle}><span>⚡</span> Vật Liệu Gốm Áp Điện & Chức Năng</h3>
                 <div>
@@ -23,23 +23,24 @@ export default function ResearchTab({ onBack }) {
                     <span style={tagStyle}>Piezoelectric Fatigue</span>
                 </div>
                 <p style={{ margin: 0, color: '#4b5563', fontSize: '14.5px', lineHeight: '1.7', textAlign: 'justify' }}>
-                    Tập trung tổng hợp và khảo sát các hệ vật liệu gốm áp điện không chì (hệ BNT-BT) và có chì (PZT). Nghiên cứu chuyên sâu đánh giá độ mỏi của gốm áp điện dưới tác dụng của điện trường chu kỳ, từ đó dự đoán tuổi thọ và độ tin cậy của vật liệu trong các ứng dụng cảm biến và cơ cấu chấp hành thực tế.
+                    Tập trung tổng hợp và khảo sát các hệ vật liệu gốm áp điện không chì (hệ BNT-BT) và có chì (PZT). Nghiên cứu chuyên sâu đánh giá độ mỏi của gốm áp điện dưới tác dụng của điện trường chu kỳ, từ đó dự đoán tuổi thọ và độ tin cậy trong các ứng dụng cảm biến thực tế.
                 </p>
             </div>
 
-            {/* Hướng 2 */}
+            {/* Hướng 2: Luyện kim màu & Tái chế chất thải (Định hướng TS. Thảo) */}
             <div style={cardStyle} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                <h3 style={titleStyle}><span>🔥</span> Công Nghệ Thiêu Kết & Luyện Kim</h3>
+                <h3 style={titleStyle}><span>♻️</span> Luyện Kim Màu & Xử Lý Chất Thải Công Nghiệp</h3>
                 <div>
-                    <span style={tagStyle}>Spark Plasma Sintering (SPS)</span>
-                    <span style={tagStyle}>Titan Xốp</span>
+                    <span style={tagStyle}>Luyện Kim Màu</span>
+                    <span style={tagStyle}>Pin Lithium Thải</span>
+                    <span style={tagStyle}>Xử Lý Bùn Đỏ</span>
                 </div>
                 <p style={{ margin: 0, color: '#4b5563', fontSize: '14.5px', lineHeight: '1.7', textAlign: 'justify' }}>
-                    Ứng dụng kỹ thuật thiêu kết tia lửa plasma (SPS) tiên tiến để chế tạo các loại vật liệu có cấu trúc đặc biệt mà phương pháp truyền thống khó đạt được. Hướng nghiên cứu tối ưu hóa thông số nhiệt độ, áp suất nhằm kiểm soát vi cấu trúc, mật độ và cơ tính cho kim loại xốp (như Titan xốp y sinh) và các hợp kim màu.
+                    Nghiên cứu công nghệ hòa tách và thu hồi kim loại màu, kim loại quý từ các nguồn phế thải công nghiệp và rác thải điện tử (như xử lý bùn đỏ bauxite hoặc tái chế phế liệu pin lithium). Hướng đi này thúc đẩy mạnh mẽ mô hình kinh tế tuần hoàn và phát triển vật liệu bền vững.
                 </p>
             </div>
 
-            {/* Hướng 3 */}
+            {/* Hướng 3: Phân tích tinh chỉnh cấu trúc */}
             <div style={cardStyle} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                 <h3 style={titleStyle}><span>📊</span> Phân Tích & Tinh Chỉnh Cấu Trúc</h3>
                 <div>
@@ -48,11 +49,11 @@ export default function ResearchTab({ onBack }) {
                     <span style={tagStyle}>XRD</span>
                 </div>
                 <p style={{ margin: 0, color: '#4b5563', fontSize: '14.5px', lineHeight: '1.7', textAlign: 'justify' }}>
-                    Sử dụng dữ liệu nhiễu xạ tia X (XRD) kết hợp với phương pháp tinh chỉnh cấu trúc tinh thể (Rietveld refinement) để xác định chính xác các thông số mạng, vị trí nguyên tử và định lượng pha. Kỹ thuật này đóng vai trò then chốt để giải thích bản chất vật lý và nguồn gốc tính chất ưu việt của hệ vật liệu mới.
+                    Sử dụng dữ liệu nhiễu xạ tia X (XRD) kết hợp với phương pháp tinh chỉnh cấu trúc tinh thể (Rietveld refinement) để xác định chính xác các thông số mạng, vị trí nguyên tử và định lượng pha, làm sáng tỏ bản chất vi cấu trúc của vật liệu mới.
                 </p>
             </div>
 
-            {/* Hướng 4 */}
+            {/* Hướng 4: Tự động hóa & Phần mềm Lab */}
             <div style={cardStyle} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                 <h3 style={titleStyle}><span>💻</span> Tự Động Hóa & Thiết Kế Phần Mềm</h3>
                 <div>
@@ -61,7 +62,7 @@ export default function ResearchTab({ onBack }) {
                     <span style={tagStyle}>Real-time Sensor</span>
                 </div>
                 <p style={{ margin: 0, color: '#4b5563', fontSize: '14.5px', lineHeight: '1.7', textAlign: 'justify' }}>
-                    Tiên phong xây dựng kiến trúc phần mềm (sử dụng Python và framework giao diện PyQt6) để thiết lập các đường ống (pipeline) xử lý dữ liệu thời gian thực. Tự động hóa quá trình thu thập thông số từ phần cứng cảm biến trên các thiết bị kiểm tra đo mỏi gốm áp điện, giúp nâng cao độ chính xác và tính module hóa trong thực nghiệm.
+                    Tiên phong xây dựng kiến trúc phần mềm (Python kết hợp PyQt6) để thiết lập các đường ống xử lý dữ liệu thời gian thực. Tự động hóa quá trình thu thập thông số từ phần cứng cảm biến trên các thiết bị kiểm tra thực nghiệm, nâng cao độ chính xác và hiệu suất nghiên cứu tại Lab.
                 </p>
             </div>
 

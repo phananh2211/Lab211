@@ -11,7 +11,7 @@ export default function AboutTab({ onBack }) {
             <h2 style={headingStyle}>🏛️ Về Chúng Tôi — Lab 211</h2>
             
             <p style={textStyle}>
-                Tọa lạc tại <b>Tòa nhà C5</b>, thuộc Trường Vật liệu (SMSE) – Đại học Bách khoa Hà Nội, <b>Phòng thí nghiệm 211</b> là một môi trường học thuật chuyên sâu và năng động. Dưới sự dẫn dắt chuyên môn tận tâm của <b>PGS. TS. Trần Vũ Diễm Ngọc</b> và <b>TS. Nguyễn Thị Thảo</b>, Lab 211 đã và đang trở thành cái nôi nuôi dưỡng niềm đam mê khoa học, nơi các thế hệ sinh viên và học viên cao học biến những ý tưởng nghiên cứu lý thuyết thành các ứng dụng kỹ thuật thực tiễn.
+                Tọa lạc tại <b>Phòng 211, Tầng 2, Tòa nhà C5</b>, thuộc Trường Vật liệu (SMSE) – Đại học Bách khoa Hà Nội, <b>Phòng thí nghiệm 211</b> là một môi trường học thuật chuyên sâu và năng động. Dưới sự dẫn dắt chuyên môn tận tâm của <b>PGS. TS. Trần Vũ Diễm Ngọc</b> và <b>TS. Nguyễn Thị Thảo</b>, Lab 211 đã và đang trở thành cái nôi nuôi dưỡng niềm đam mê khoa học, nơi các thế hệ sinh viên và học viên cao học biến những ý tưởng nghiên cứu lý thuyết thành các ứng dụng kỹ thuật thực tiễn.
             </p>
 
             <h3 style={subHeadingStyle}><span>🎯</span> Sứ mệnh & Tầm nhìn</h3>
