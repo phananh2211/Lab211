@@ -7,6 +7,45 @@ import SettingsTab from './components/SettingsTab';
 import Footer from './components/Footer'; 
 import PublicContent from './components/PublicContent'; 
 import { Toaster, toast } from 'react-hot-toast';
+import { initializeApp } from "firebase/app"; // 🌟 MỚI: Thêm Firebase app
+import { getMessaging, getToken } from "firebase/messaging"; // 🌟 MỚI: Thêm Firebase messaging
+
+// 🌟 MỚI: Cấu hình Firebase Web Push (Thay thế các thông số cấu hình Firebase của dự án bạn)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
+
+// 🌟 MỚI: Hàm xin quyền và đăng ký Web Push Token
+const requestNotificationPermission = async (userEmail) => {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      const currentToken = await getToken(messaging, {
+        vapidKey: 'DÁN_MÃ_VAPID_KEY_CỦA_BẠN_VÀO_ĐÂY'
+      });
+      
+      if (currentToken && userEmail) {
+        await supabase
+          .from('user_devices')
+          .upsert({ 
+            email: userEmail, 
+            fcm_token: currentToken, 
+            updated_at: new Date() 
+          }, { onConflict: 'email' });
+      }
+    }
+  } catch (error) {
+    console.error("Lỗi khi đăng ký nhận Web Push Notification:", error);
+  }
+};
 
 export default function App() {
   const queryParams = new URLSearchParams(window.location.search);
@@ -30,11 +69,8 @@ export default function App() {
   const [phone, setPhone] = useState('');
   const [supervisor, setSupervisor] = useState('');
   
-  // State cho checkbox Điều khoản sử dụng và Giữ đăng nhập
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-
-  // State để quản lý việc hiển thị Modal Điều khoản sử dụng dạng Popup
   const [showTermsModal, setShowTermsModal] = useState(false);
   
   const [isSignUp, setIsSignUp] = useState(false);
@@ -43,8 +79,6 @@ export default function App() {
 
   const [showAuthBox, setShowAuthBox] = useState(initialAuth);
   const [currentView, setCurrentView] = useState(initialView);
-  
-  // 🌟 MỚI: State quản lý trạng thái mở/đóng của Menu Mobile
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [mfaRequired, setMfaRequired] = useState(false);
@@ -56,7 +90,7 @@ export default function App() {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const handleNavigate = (view) => {
-    setIsMobileMenuOpen(false); // Đóng menu mobile khi click điều hướng
+    setIsMobileMenuOpen(false);
     if (currentView === view && !showAuthBox) return;
     setIsTransitioning(true);
     window.history.pushState({}, '', view === 'dashboard' ? window.location.pathname : `?view=${view}`);
@@ -69,7 +103,7 @@ export default function App() {
   };
 
   const handleOpenAuth = () => {
-    setIsMobileMenuOpen(false); // Đóng menu mobile
+    setIsMobileMenuOpen(false);
     setIsTransitioning(true);
     window.history.pushState({}, '', `?auth=true`);
     setTimeout(() => {
@@ -130,6 +164,7 @@ export default function App() {
             }
             setSession(session);
             await fetchUserInfoWithRetry(session.user.email);
+            requestNotificationPermission(session.user.email); // 🌟 MỚI: Xin quyền và lưu FCM token khi khởi động có session
         }
       } catch (err) {
         console.error("Lỗi khởi tạo phiên:", err);
@@ -161,6 +196,7 @@ export default function App() {
           }
           setSession(session);
           await fetchUserInfoWithRetry(session.user.email);
+          requestNotificationPermission(session.user.email); // 🌟 MỚI: Xin quyền và lưu FCM token khi thay đổi trạng thái đăng nhập
         } catch (err) {
           console.error("Lỗi xác thực sự kiện auth:", err);
         }
@@ -171,7 +207,6 @@ export default function App() {
         setAvatarUrl('');
         setNotifications([]);
         setMfaRequired(false);
-        // 🌟 FIX LỖI F5: Thay vì ép về cứng 'dashboard', đọc chính xác từ URL[cite: 7]
         const currentUrlView = new URLSearchParams(window.location.search).get('view') || 'dashboard';
         setCurrentView(currentUrlView);
         setShowAuthBox(new URLSearchParams(window.location.search).get('auth') === 'true');
@@ -202,7 +237,6 @@ export default function App() {
     }
   };
 
-  // 🌟 LẮNG NGHE REALTIME THAY ĐỔI THÔNG TIN CÁ NHÂN (SETTINGS) CỦA CHÍNH MÌNH (KHÔNG CẦN F5)
   useEffect(() => {
     if (!session?.user?.email) return;
 
@@ -230,7 +264,6 @@ export default function App() {
     };
   }, [session?.user?.email]);
 
-// 🌟 LẮNG NGHE REALTIME THÔNG BÁO VÀ TƯƠNG TÁC TỪ NGƯỜI DÙNG KHÁC
   useEffect(() => {
       if (!session?.user?.email || mfaRequired) return;
       const fetchNotifs = async () => {
@@ -317,6 +350,7 @@ export default function App() {
           } else {
               if (authData?.session?.user?.email) {
                   await fetchUserInfoWithRetry(authData.session.user.email);
+                  requestNotificationPermission(authData.session.user.email); // 🌟 MỚI: Xin quyền nhận thông báo sau khi đăng nhập thành công
               }
               toast.success("Đăng nhập thành công!");
               setLoading(false);
@@ -365,6 +399,7 @@ export default function App() {
       
       if (session?.user?.email) {
           await fetchUserInfoWithRetry(session.user.email);
+          requestNotificationPermission(session.user.email); // 🌟 MỚI: Lưu token sau khi xác thực MFA xong
       }
       toast.success("🛡️ Xác thực MFA thành công!");
       setMfaRequired(false);
@@ -414,7 +449,6 @@ export default function App() {
                 .top-progress-bar { position: fixed; top: 0; left: 0; height: 3px; background-color: #3b82f6; z-index: 9999; box-shadow: 0 0 10px #3b82f6; transition: width 0.3s ease, opacity 0.3s ease; }
                 .page-transition { transition: opacity 0.3s ease; opacity: ${isTransitioning ? '0.6' : '1'}; pointer-events: ${isTransitioning ? 'none' : 'auto'}; }
                 
-                /* 🌟 Tích hợp CSS cho Hamburger Menu Mobile */
                 @media (max-width: 850px) {
                     .desktop-menu { display: none !important; }
                     .mobile-menu-btn { display: block !important; }
@@ -441,7 +475,6 @@ export default function App() {
                         <span style={{ color: '#ffffff', fontWeight: '800', fontSize: '16px', letterSpacing: '-0.025em' }}>Lab 211 <span style={{ color: '#3b82f6', fontWeight: '500', fontSize: '13px' }}>Management</span></span>
                     </div>
 
-                    {/* Navbar Desktop */}
                     <div className="desktop-menu" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                         {[
                             { id: 'about', label: 'Giới thiệu' },
@@ -474,7 +507,6 @@ export default function App() {
                         </button>
                     </div>
 
-                    {/* Nút 3 Gạch cho Mobile */}
                     <button 
                         className="mobile-menu-btn" 
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -483,7 +515,6 @@ export default function App() {
                         {isMobileMenuOpen ? '✕' : '☰'}
                     </button>
 
-                    {/* Overlay Menu Dọc Dành Cho Mobile */}
                     {isMobileMenuOpen && (
                         <div style={{ position: 'absolute', top: '110%', left: 0, width: '100%', backgroundColor: 'rgba(31, 41, 55, 0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', boxSizing: 'border-box' }}>
                             {[
@@ -513,7 +544,6 @@ export default function App() {
                 </nav>
 
                 <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '110px 20px 60px 20px', boxSizing: 'border-box', position: 'relative', zIndex: 1, width: '100%' }}>
-                    {/* Kiểm tra đầy đủ currentView để render đúng tab[cite: 7] */}
                     {['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? (
                         <div className="fade-in-box" style={{ width: '100%', maxWidth: '800px', backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(12px)', padding: '30px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)', boxSizing: 'border-box' }}>
                             <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
@@ -549,7 +579,6 @@ export default function App() {
                                     <div><label style={{ fontSize: '13px', fontWeight: '700', color: '#111827', display: 'block', marginBottom: '6px' }}>Email trường: *</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@sis.hust.edu.vn" required style={inputStyle} /></div>
                                     <div><label style={{ fontSize: '13px', fontWeight: '700', color: '#111827', display: 'block', marginBottom: '6px' }}>Mật khẩu: *</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required style={inputStyle} /></div>
                                     
-                                    {/* Phần điều khoản sử dụng khi Đăng ký */}
                                     {isSignUp && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#374151' }}>
                                             <input 
@@ -571,7 +600,6 @@ export default function App() {
                                         </div>
                                     )}
 
-                                    {/* Tùy chọn Giữ đăng nhập khi Đăng nhập */}
                                     {!isSignUp && (
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px', color: '#374151' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -601,7 +629,6 @@ export default function App() {
                                 </form>
                             )}
 
-                            {/* MODAL HIỂN THỊ ĐIỀU KHOẢN SỬ DỤNG (KÈM NÚT X ĐÓNG) */}
                             {showTermsModal && (
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', borderRadius: '24px', zIndex: 50, display: 'flex', flexDirection: 'column', padding: '24px', boxSizing: 'border-box' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px' }}>
@@ -655,8 +682,6 @@ export default function App() {
         </>
       );
   }
-
-  // --- PHẦN MFA VÀ DASHBOARD BÊN DƯỚI ---
 
   if (mfaRequired) {
       return (
@@ -740,7 +765,6 @@ export default function App() {
                     </div>
                 </div>
 
-                {/* HIỂN THỊ VIEW */}
                 {currentView === 'settings' ? (
                     <SettingsTab 
                         session={sessionWithRole} 
