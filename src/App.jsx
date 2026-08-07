@@ -230,7 +230,7 @@ export default function App() {
     };
   }, [session?.user?.email]);
 
-  // 🌟 LẮNG NGHE REALTIME THÔNG BÁO VÀ TƯƠNG TÁC TỪ NGƯỜI DÙNG KHÁC
+// 🌟 LẮNG NGHE REALTIME THÔNG BÁO VÀ TƯƠNG TÁC TỪ NGƯỜI DÙNG KHÁC
   useEffect(() => {
       if (!session?.user?.email || mfaRequired) return;
       const fetchNotifs = async () => {
