@@ -505,14 +505,14 @@ export default function SettingsTab({ session, onUpdateUser }) {
             </div>
           </div>
 
-          {/* 🌟 SECTION THÔNG TIN NGÂN HÀNG KÈM HIỂN THỊ ICON LOGO */}
+{/* 🌟 SECTION THÔNG TIN NGÂN HÀNG KÈM HIỂN THỊ ICON LOGO PHÓNG TO */}
           <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '5px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <h4 style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>💳 Thông tin tài khoản ngân hàng nhận giải ngân</h4>
               {currentBankObj?.logo && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'white', padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <img src={currentBankObj.logo} alt="Bank Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334151' }}>{currentBankObj.code.toUpperCase()}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'white', padding: '6px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                  <img src={currentBankObj.logo} alt="Bank Logo" style={{ width: '40px', height: '40px', objectFit: 'contain' }} />
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#334151' }}>{currentBankObj.code.toUpperCase()}</span>
                 </div>
               )}
             </div>
