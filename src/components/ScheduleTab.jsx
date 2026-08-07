@@ -19,6 +19,9 @@ export default function ScheduleTab({ session, role, readOnly }) {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    // 🌟 1. State cho bộ lọc "Chỉ hiển thị lịch của tôi"
+    const [showOnlyMyBookings, setShowOnlyMyBookings] = useState(false);
+
     const hours = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
 
     function getMonday(d) {
@@ -108,8 +111,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
         const isMine = existingBooking?.user_email === currentUserEmail;
 
         if (existingBooking) {
-            // 🌟 Ưu tiên lấy full_name thật từ session metadata nếu là lịch của mình,
-            // phòng trường hợp DB đang bị kẹt tên là phần đầu của email (prefix) từ phiên bản cũ.
             let userName = existingBooking.users?.full_name || 'Thành viên';
             if (isMine && session?.user?.user_metadata?.full_name) {
                 userName = session.user.user_metadata.full_name;
@@ -222,6 +223,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
             hourOptions += `<option value="${i}">${i.toString().padStart(2, '0')}:00</option>`;
         }
 
+        // 🌟 2. Cải tiến form SweetAlert2 cho Đặt lịch nhanh nhiều khung giờ / Lặp lại hàng tuần
         Swal.fire({
             title: `Đăng ký ${selectedEquip.name}`,
             html: `
@@ -245,9 +247,16 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     </div>
 
                     <label style="display:block; font-weight: bold; margin-bottom: 5px; color: #dc2626;">Thời gian kết thúc dự kiến: *</label>
-                    <select id="swal-end-time" class="swal2-select" style="margin:0; width: 100%; box-sizing: border-box; height: 42px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    <select id="swal-end-time" class="swal2-select" style="margin:0 0 15px 0; width: 100%; box-sizing: border-box; height: 42px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 6px;">
                         ${hourOptions}
                     </select>
+
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold; color: #1e40af; font-size: 13px;">
+                            <input id="swal-repeat" type="checkbox" style="width: 16px; height: 16px; cursor: pointer;">
+                            🔁 Đặt lặp lại cố định khung giờ này mỗi tuần (trong 4 tuần tới)
+                        </label>
+                    </div>
                 </div>
             `,
             showCancelButton: true,
@@ -260,36 +269,52 @@ export default function ScheduleTab({ session, role, readOnly }) {
                 const material = document.getElementById('swal-material').value;
                 const quantity = document.getElementById('swal-quantity').value;
                 const endHour = document.getElementById('swal-end-time').value;
+                const isRepeat = document.getElementById('swal-repeat').checked;
 
                 if (!purpose) {
                     Swal.showValidationMessage('Vui lòng nhập mục đích sử dụng!');
                     return false;
                 }
-                return { purpose, material, quantity, endHour };
+                return { purpose, material, quantity, endHour, isRepeat };
             }
         }).then(async (result) => {
             if (result.isConfirmed && result.value) {
-                const { purpose, material, quantity, endHour } = result.value;
+                const { purpose, material, quantity, endHour, isRepeat } = result.value;
 
                 let finalPurpose = purpose;
                 if (material || quantity) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                const finalSlotEnd = new Date(slotStart);
-                finalSlotEnd.setHours(parseInt(endHour), 0, 0, 0);
-
-                const { error } = await supabase.rpc('book_equipment', {
-                    p_equip_id: selectedEquip.id, 
-                    p_start: slotStart.toISOString(), 
-                    p_end: finalSlotEnd.toISOString(),
-                    p_purpose: finalPurpose
-                });
+                const durationHours = parseInt(endHour) - currentHour;
                 
-                if (error) {
-                    toast.error("Lỗi đặt lịch: " + error.message);
-                } else {
-                    toast.success("🎉 Đặt lịch thành công!");
+                // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
+                const weeksToRepeat = isRepeat ? 4 : 1;
+                let hasError = false;
+
+                for (let w = 0; w < weeksToRepeat; w++) {
+                    const currentSlotStart = new Date(slotStart);
+                    currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
+
+                    const currentSlotEnd = new Date(currentSlotStart);
+                    currentSlotEnd.setHours(currentSlotStart.getHours() + durationHours, 0, 0, 0);
+
+                    const { error } = await supabase.rpc('book_equipment', {
+                        p_equip_id: selectedEquip.id, 
+                        p_start: currentSlotStart.toISOString(), 
+                        p_end: currentSlotEnd.toISOString(),
+                        p_purpose: isRepeat ? `${finalPurpose} (Lặp lại tuần ${w + 1}/4)` : finalPurpose
+                    });
+
+                    if (error) {
+                        hasError = true;
+                        toast.error(`Lỗi đặt lịch tuần ${w + 1}: ` + error.message);
+                        break;
+                    }
+                }
+                
+                if (!hasError) {
+                    toast.success(isRepeat ? "🎉 Đặt lịch lặp lại 4 tuần thành công!" : "🎉 Đặt lịch thành công!");
                     fetchBookings();
                 }
             }
@@ -309,27 +334,53 @@ export default function ScheduleTab({ session, role, readOnly }) {
                 </p>
             </div>
 
-            {/* Danh sách thiết bị */}
-            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '15px', borderBottom: '1px solid #eee', marginBottom: '20px' }}>
-                {equipments.map(eq => (
-                    <button key={eq.id} onClick={() => setSelectedEquip(eq)}
-                        style={{ 
-                            padding: '10px 20px', borderRadius: '25px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 'bold', transition: 'all 0.2s',
-                            backgroundColor: selectedEquip?.id === eq.id ? '#0056b3' : '#f3f4f6',
-                            color: selectedEquip?.id === eq.id ? 'white' : '#374151',
-                            opacity: eq.status === 'Hỏng' ? 0.6 : 1,
-                            boxShadow: selectedEquip?.id === eq.id ? '0 4px 8px rgba(0,86,179,0.2)' : 'none'
-                        }}>
-                        {eq.name} {eq.status === 'Hỏng' && ' 🚫 (Bảo trì)'}
-                    </button>
-                ))}
+            {/* Danh sách thiết bị kết hợp 🌟 4. Trực quan hóa trạng thái thiết bị (Equipment Status Badge) */}
+            <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '15px', borderBottom: '1px solid #eee', marginBottom: '20px', alignItems: 'center' }}>
+                {equipments.map(eq => {
+                    const isSelected = selectedEquip?.id === eq.id;
+                    const isBrokenOrMaintenance = eq.status === 'Hỏng' || eq.status === 'Đang bảo trì';
+
+                    let badgeBg = '#dcfce7'; let badgeColor = '#166534'; let statusText = 'Sẵn sàng';
+                    if (eq.status === 'Hỏng') { badgeBg = '#fee2e2'; badgeColor = '#991b1b'; statusText = 'Hỏng / Bảo trì'; }
+                    else if (eq.status === 'Đang bảo trì') { badgeBg = '#fef3c7'; badgeColor = '#92400e'; statusText = 'Đang bảo trì'; }
+
+                    return (
+                        <button key={eq.id} onClick={() => setSelectedEquip(eq)}
+                            style={{ 
+                                padding: '10px 18px', borderRadius: '25px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 'bold', transition: 'all 0.2s',
+                                backgroundColor: isSelected ? '#0056b3' : '#f3f4f6',
+                                color: isSelected ? 'white' : '#374151',
+                                boxShadow: isSelected ? '0 4px 8px rgba(0,86,179,0.2)' : 'none',
+                                display: 'flex', alignItems: 'center', gap: '8px'
+                            }}>
+                            <span>{eq.name}</span>
+                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : badgeBg, color: isSelected ? '#ffffff' : badgeColor }}>
+                                {statusText}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* Điều hướng tuần */}
+            {/* Điều hướng tuần và 🌟 1. Bộ lọc / Chế độ xem "Lịch của tôi" */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>
-                    Tuần: {weekStart.toLocaleDateString('vi-VN')} - {weekDays[6].toLocaleDateString('vi-VN')}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>
+                        Tuần: {weekStart.toLocaleDateString('vi-VN')} - {weekDays[6].toLocaleDateString('vi-VN')}
+                    </span>
+                    
+                    {/* Checkbox lọc Lịch của tôi */}
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#eff6ff', padding: '6px 12px', borderRadius: '20px', border: '1px solid #bfdbfe', fontSize: '13px', fontWeight: '600', color: '#1e40af', cursor: 'pointer' }}>
+                        <input 
+                            type="checkbox" 
+                            checked={showOnlyMyBookings} 
+                            onChange={e => setShowOnlyMyBookings(e.target.checked)}
+                            style={{ width: '15px', height: '15px', cursor: 'pointer' }} 
+                        />
+                        ⭐ Chỉ hiển thị lịch của tôi
+                    </label>
+                </div>
+
                 <div style={{ display: 'flex', gap: '15px', alignItems: 'center', backgroundColor: '#f9fafb', padding: '5px 15px', borderRadius: '20px', border: '1px solid #e5e7eb' }}>
                     <button onClick={() => { const d = new Date(weekStart); d.setDate(d.getDate() - 7); setWeekStart(d); }} style={{ cursor: 'pointer', background: 'none', border: 'none', fontSize: '16px', color: '#007bff', fontWeight: 'bold' }}>◀</button>
                     <span style={{ color: '#4b5563', fontSize: '14px', fontWeight: 'bold' }}>Chuyển tuần</span>
@@ -389,6 +440,9 @@ export default function ScheduleTab({ session, role, readOnly }) {
                                     const booking = getBookingForSlot(date, hour);
                                     const isMine = booking?.user_email === currentUserEmail;
                                     
+                                    // Xử lý bộ lọc hiển thị lịch của tôi
+                                    const isDimmed = showOnlyMyBookings && booking && !isMine;
+
                                     let isStartSlot = false;
                                     if (booking) {
                                         const bStartHour = new Date(booking.start_time).getHours();
@@ -413,8 +467,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
                                                 height: '55px', 
                                                 position: 'relative',
                                                 backgroundColor: bgColor,
-                                                opacity: isPast && !booking ? 0.6 : 1,
-                                                transition: 'background-color 0.2s'
+                                                opacity: (isPast && !booking) || isDimmed ? 0.25 : 1,
+                                                transition: 'background-color 0.2s, opacity 0.2s'
                                             }}
                                             onMouseEnter={e => !booking && !isReadOnly && !isPast && (e.currentTarget.style.backgroundColor = '#e2e8f0')}
                                             onMouseLeave={e => !booking && !isReadOnly && !isPast && (e.currentTarget.style.backgroundColor = isToday ? '#f0fdf4' : '#ffffff')}

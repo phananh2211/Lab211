@@ -13,9 +13,10 @@ export default function ProcurementTab({ session, role }) {
   const [actionLoadingId, setActionLoadingId] = useState(null); 
   const [deletingId, setDeletingId] = useState(null); 
 
-  // Bộ lọc và tìm kiếm bổ sung cho Student & Lecturer
+  // Bộ lọc và tìm kiếm bổ sung
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState('Tất cả'); // 'Tất cả', 'Phiếu của tôi', hoặc trạng thái cụ thể
+  const [selectedUserFilter, setSelectedUserFilter] = useState('Tất cả'); // 🌟 MỚI: Lọc theo thành viên (Dành cho Lecturer/Admin)
 
   // Modal State tạo đề xuất mới
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,6 +26,9 @@ export default function ProcurementTab({ session, role }) {
   const [estimatedPrice, setEstimatedPrice] = useState('');
   const [bankCode, setBankCode] = useState('970436');
   const [bankAccount, setBankAccount] = useState('');
+
+  // 🌟 MỚI: State quản lý Lightbox xem ảnh hóa đơn trực tiếp
+  const [lightboxImg, setLightboxImg] = useState(null);
 
   const currentUser = session?.user?.email;
   const isLecturerOrAdmin = role === 'Lecturer' || role === 'Admin';
@@ -70,13 +74,12 @@ export default function ProcurementTab({ session, role }) {
     }
   }, [currentUser, fetchProcurements, fetchUserProfileBank]);
 
-  // Khi mở modal, tự động nạp lại thông tin ngân hàng mới nhất từ profile cá nhân để đảm bảo luôn mượt mà
   const handleOpenModal = () => {
     fetchUserProfileBank();
     setIsModalOpen(true);
   };
 
-  // Submit tạo đề xuất mới (có kiểm tra URL hợp lệ bằng Regex cơ bản)
+  // Submit tạo đề xuất mới
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     if (!itemName.trim()) {
@@ -86,7 +89,6 @@ export default function ProcurementTab({ session, role }) {
       return toast.error("Vui lòng nhập số tài khoản ngân hàng để nhận giải ngân!");
     }
 
-    // Kiểm tra định dạng URL nếu sinh viên có nhập link sản phẩm
     if (productLink.trim()) {
       try {
         new URL(productLink.trim());
@@ -97,7 +99,6 @@ export default function ProcurementTab({ session, role }) {
 
     setIsSubmitting(true);
 
-    // Tự động lưu / nhớ thông tin ngân hàng cá nhân vào profile
     await supabase.from('users').update({
       bank_code: bankCode,
       bank_account: bankAccount.trim()
@@ -126,7 +127,7 @@ export default function ProcurementTab({ session, role }) {
     setIsSubmitting(false);
   };
 
-  // Hàm cho phép sinh viên tải ảnh hóa đơn lên kho 'receipts'
+  // Hàm tải ảnh hóa đơn lên kho 'receipts'
   const handleUploadReceipt = async (item) => {
     const { value: file } = await Swal.fire({
       title: '📤 Tải lên ảnh hóa đơn / chứng từ',
@@ -190,7 +191,7 @@ export default function ProcurementTab({ session, role }) {
     }
   };
 
-  // Giảng viên / Admin duyệt và giải ngân bảo mật (Có liên thông tự động log vào internal_transfers)
+  // Giảng viên / Admin duyệt và giải ngân bảo mật
   const handleReview = async (item, newStatus) => {
     if (newStatus === 'Đã giải ngân') {
       const bCode = item.users?.bank_code;
@@ -251,7 +252,6 @@ export default function ProcurementTab({ session, role }) {
           if (error) {
             toast.error("Lỗi cập nhật: " + error.message);
           } else {
-            // 🌟 Liên thông tự động ghi log vào bảng chuyển khoản nội bộ (internal_transfers)
             await supabase.from('internal_transfers').insert({
               sender_email: currentUser,
               recipient_email: item.user_email,
@@ -346,7 +346,19 @@ export default function ProcurementTab({ session, role }) {
     });
   };
 
-  // Thống kê nhanh tổng ngân sách/chi phí & Lọc dữ liệu thông minh
+  // 🌟 LẤY DANH SÁCH THÀNH VIÊN ĐỂ LỌC (Dành cho Giảng viên / Admin)
+  const uniqueMembers = useMemo(() => {
+    const memberMap = new Map();
+    procurements.forEach(item => {
+      if (item.user_email) {
+        const name = item.users?.full_name || item.user_email;
+        memberMap.set(item.user_email, name);
+      }
+    });
+    return Array.from(memberMap.entries()).map(([email, name]) => ({ email, name }));
+  }, [procurements]);
+
+  // Thống kê nhanh & Lọc dữ liệu thông minh
   const { stats, filteredProcurements } = useMemo(() => {
     let pendingCount = 0;
     let totalEstimatedThisMonth = 0;
@@ -356,7 +368,6 @@ export default function ProcurementTab({ session, role }) {
       if (item.status === 'Chờ duyệt') {
         pendingCount++;
       }
-      // Tính tổng tiền dự kiến các phiếu đang hoạt động hoặc trong tháng hiện tại
       const createdAt = new Date(item.created_at);
       if (createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()) {
         if (item.status !== 'Từ chối') {
@@ -365,18 +376,22 @@ export default function ProcurementTab({ session, role }) {
       }
     });
 
-    // Lọc theo Search Term (tên vật tư) và Filter Mode (tab trạng thái / phiếu của tôi)
     const result = procurements.filter(item => {
       const matchName = item.item_name.toLowerCase().includes(searchTerm.toLowerCase());
       if (!matchName) return false;
 
+      // Lọc theo chế độ tab
       if (filterMode === 'Phiếu của tôi') {
-        return item.user_email === currentUser;
+        if (item.user_email !== currentUser) return false;
+      } else if (filterMode !== 'Tất cả') {
+        if (item.status !== filterMode) return false;
       }
-      if (filterMode !== 'Tất cả') {
-        // Đối với tab 'Đã mua', kiểm tra status 'Đã mua'
-        return item.status === filterMode;
+
+      // 🌟 Lọc theo Dropdown Thành viên (nếu có chọn)
+      if (selectedUserFilter !== 'Tất cả' && item.user_email !== selectedUserFilter) {
+        return false;
       }
+
       return true;
     });
 
@@ -384,7 +399,46 @@ export default function ProcurementTab({ session, role }) {
       stats: { pendingCount, totalEstimatedThisMonth },
       filteredProcurements: result
     };
-  }, [procurements, searchTerm, filterMode, currentUser]);
+  }, [procurements, searchTerm, filterMode, currentUser, selectedUserFilter]);
+
+  // 🌟 TÍNH NĂNG XUẤT BÁO CÁO EXCEL (CSV)
+  const handleExportExcel = () => {
+    if (filteredProcurements.length === 0) {
+      return toast.error("Không có dữ liệu để xuất báo cáo!");
+    }
+
+    let csvContent = "\uFEFF"; // BOM cho tiếng Việt hiển thị chuẩn trên Excel
+    csvContent += "Người đề xuất,Email,Tên vật tư,Số lượng,Giá dự kiến (VNĐ),Trạng thái,Ghi chú giảng viên,Ngày tạo\n";
+
+    filteredProcurements.forEach(item => {
+      const name = `"${(item.users?.full_name || item.user_email).replace(/"/g, '""')}"`;
+      const email = `"${item.user_email}"`;
+      const itemNameClean = `"${item.item_name.replace(/"/g, '""')}"`;
+      const qty = item.quantity;
+      const price = item.estimated_price || 0;
+      const status = `"${item.status}"`;
+      const note = `"${(item.lecturer_note || '').replace(/"/g, '""')}"`;
+      const date = `"${new Date(item.created_at).toLocaleDateString('vi-VN')}"`;
+
+      csvContent += `${name},${email},${itemNameClean},${qty},${price},${status},${note},${date}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Bao_Cao_Mua_Sam_Lab211_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("📥 Xuất báo cáo thành công!");
+  };
+
+  // Kiểm tra xem một link có phải là ảnh trên Storage của Supabase hoặc ảnh thông thường không để mở Lightbox
+  const isImageUrl = (url) => {
+    if (!url) return false;
+    return url.includes('/storage/v1/object/public/receipts/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+  };
 
   return (
     <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -394,22 +448,32 @@ export default function ProcurementTab({ session, role }) {
           <h3 style={{ margin: '0 0 5px 0', color: '#111827', fontSize: '18px' }}>🛒 Quản lý Đề xuất Mua sắm & Giải ngân Tài chính</h3>
           <p style={{ margin: 0, color: '#6b7280', fontSize: '14px' }}>
             {isLecturerOrAdmin 
-              ? 'Phê duyệt, kiểm tra hóa đơn và quét QR giải ngân bảo mật.' 
+              ? 'Phê duyệt, kiểm tra hóa đơn, lọc thành viên và quét QR giải ngân bảo mật.' 
               : 'Tạo phiếu đề xuất, tải lên hóa đơn và theo dõi trạng thái giải ngân.'}
           </p>
         </div>
 
-        {!isLecturer && (
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* 🌟 Nút xuất báo cáo Excel */}
           <button 
-            onClick={handleOpenModal}
-            style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(37,99,235,0.2)' }}
+            onClick={handleExportExcel}
+            style={{ padding: '10px 16px', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(5,150,105,0.2)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            + Tạo đề xuất mới
+            📥 Xuất báo cáo Excel
           </button>
-        )}
+
+          {!isLecturer && (
+            <button 
+              onClick={handleOpenModal}
+              style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(37,99,235,0.2)' }}
+            >
+              + Tạo đề xuất mới
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* 🌟 THỐNG KÊ NHANH TỔNG NGÂN SÁCH / CHI PHÍ CHO LECTURER & ADMIN */}
+      {/* THỐNG KÊ NHANH TỔNG NGÂN SÁCH / CHI PHÍ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '20px' }}>
         <div style={{ backgroundColor: '#eff6ff', padding: '15px', borderRadius: '12px', border: '1px solid #dbeafe' }}>
           <div style={{ fontSize: '12px', color: '#1e40af', fontWeight: 'bold', textTransform: 'uppercase' }}>Đề xuất đang chờ duyệt</div>
@@ -421,9 +485,9 @@ export default function ProcurementTab({ session, role }) {
         </div>
       </div>
 
-      {/* 🌟 THANH TÌM KIẾM NHANH & BỘ LỌC TRẠNG THÁI (FILTER TABS) */}
+      {/* THANH TÌM KIẾM, BỘ LỌC TRẠNG THÁI & 🌟 LỌC THEO THÀNH VIÊN */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
           {['Tất cả', 'Phiếu của tôi', 'Chờ duyệt', 'Đã duyệt', 'Đã giải ngân', 'Đã mua', 'Từ chối'].map(mode => (
             <button
               key={mode}
@@ -442,6 +506,20 @@ export default function ProcurementTab({ session, role }) {
               {mode}
             </button>
           ))}
+
+          {/* 🌟 Dropdown lọc theo thành viên dành riêng cho Giảng viên / Admin */}
+          {isLecturerOrAdmin && uniqueMembers.length > 0 && (
+            <select
+              value={selectedUserFilter}
+              onChange={e => setSelectedUserFilter(e.target.value)}
+              style={{ padding: '6px 10px', borderRadius: '20px', border: '1px solid #d1d5db', fontSize: '12px', backgroundColor: '#f3f4f6', color: '#374151', fontWeight: '600', outline: 'none', cursor: 'pointer' }}
+            >
+              <option value="Tất cả">👤 Lọc theo thành viên (Tất cả)</option>
+              {uniqueMembers.map(m => (
+                <option key={m.email} value={m.email}>{m.name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div>
@@ -513,9 +591,20 @@ export default function ProcurementTab({ session, role }) {
                         {item.estimated_price ? `${Number(item.estimated_price).toLocaleString('vi-VN')} đ` : 'Chưa rõ'}
                       </div>
                       {item.product_link ? (
-                        <a href={item.product_link} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '12px', display: 'block', marginTop: '3px' }}>
-                          🧾 Xem hóa đơn / Link
-                        </a>
+                        isImageUrl(item.product_link) ? (
+                          // 🌟 Nếu là link ảnh hóa đơn -> Bấm vào bật Lightbox ngay tại chỗ
+                          <button
+                            onClick={() => setLightboxImg(item.product_link)}
+                            style={{ background: 'none', border: 'none', padding: 0, color: '#2563eb', textDecoration: 'underline', fontSize: '12px', cursor: 'pointer', display: 'block', marginTop: '3px', textAlign: 'left' }}
+                          >
+                            👁️ Xem ảnh hóa đơn
+                          </button>
+                        ) : (
+                          // Nếu là link sản phẩm tham khảo thông thường -> Mở tab mới
+                          <a href={item.product_link} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '12px', display: 'block', marginTop: '3px' }}>
+                            🔗 Link sản phẩm
+                          </a>
+                        )
                       ) : <span style={{ color: '#9ca3af', fontSize: '12px' }}>Chưa có hóa đơn</span>}
                     </td>
                     <td style={{ padding: '12px 15px', textAlign: 'center' }}>
@@ -691,6 +780,28 @@ export default function ProcurementTab({ session, role }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= 🌟 MODAL LIGHTBOX XEM ẢNH HÓA ĐƠN TRỰC TIẾP ================= */}
+      {lightboxImg && (
+        <div 
+          onClick={() => setLightboxImg(null)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '20px' }}
+        >
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setLightboxImg(null)}
+              style={{ position: 'absolute', top: '-40px', right: '0', background: 'none', border: 'none', color: 'white', fontSize: '28px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              ✕ Đóng
+            </button>
+            <img 
+              src={lightboxImg} 
+              alt="Hóa đơn / Chứng từ phóng to" 
+              style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', backgroundColor: 'white' }} 
+            />
           </div>
         </div>
       )}

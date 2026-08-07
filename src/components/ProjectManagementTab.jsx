@@ -10,15 +10,21 @@ export default function ProjectManagementTab({ session, role }) {
   const [loading, setLoading] = useState(true);
 
   // 🌟 State quản lý trạng thái loading cục bộ cho các thao tác
-  const [actionLoadingId, setActionLoadingId] = useState(null); // ID đề tài đang được thao tác (duyệt/hoàn thành/hủy)
-  const [isCreatingProj, setIsCreatingProj] = useState(false); // Trạng thái đang tạo đề tài mới
-  const [isSubmittingTask, setIsSubmittingTask] = useState(false); // Trạng thái đang giao việc
+  const [actionLoadingId, setActionLoadingId] = useState(null); 
+  const [isCreatingProj, setIsCreatingProj] = useState(false); 
+  const [isSubmittingTask, setIsSubmittingTask] = useState(false); 
 
   // Modal State for Lecturers
   const [selectedProject, setSelectedProject] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDesc, setNewTaskDesc] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
+  const [newTaskLink, setNewTaskLink] = useState(''); // 🌟 MỚI: Link đính kèm minh chứng cho Task
+
+  // 🌟 MỚI: State quản lý chỉnh sửa / cập nhật link minh chứng & ghi chú thảo luận cho Sinh viên trên mỗi Task
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [taskProofLink, setTaskProofLink] = useState('');
+  const [taskComment, setTaskComment] = useState('');
 
   // Modal State for Students / Admin
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -58,7 +64,7 @@ export default function ProjectManagementTab({ session, role }) {
         ]);
       }
 
-      // 3. Fetch Tasks
+      // 3. Fetch Tasks (Đảm bảo bảng tasks có các cột bổ sung như proof_link, comments nếu cần, hoặc lưu dạng JSON/text)
       const { data: taskData, error: taskErr } = await supabase
         .from('tasks')
         .select('*')
@@ -114,7 +120,6 @@ export default function ProjectManagementTab({ session, role }) {
     }).then(async (result) => {
       if (result.isConfirmed) {
         setActionLoadingId(`complete-${projId}`);
-        // Cập nhật trạng thái thành 'Hoàn thành' để đánh thức Trigger dưới SQL
         const { error } = await supabase
           .from('projects')
           .update({ progress_status: 'Hoàn thành' })
@@ -136,7 +141,7 @@ export default function ProjectManagementTab({ session, role }) {
     });
   };
 
-  // Hàm cho phép sinh viên tự hủy/xóa đề tài nếu đang ở trạng thái 'Đề xuất'
+  // Hủy khai báo đề tài
   const handleDeleteMyProject = async (projId, projTitle) => {
     Swal.fire({
       title: 'Hủy khai báo đề tài?',
@@ -173,9 +178,10 @@ export default function ProjectManagementTab({ session, role }) {
     setNewTaskTitle('');
     setNewTaskDesc('');
     setNewTaskDeadline('');
+    setNewTaskLink('');
   };
 
-  // Submit giao việc mới
+  // Submit giao việc mới (có đính kèm link tài liệu/minh chứng)
   const handleAddTaskSubmit = async (e) => {
     e.preventDefault();
     if (!newTaskTitle.trim() || !selectedProject) return;
@@ -191,7 +197,8 @@ export default function ProjectManagementTab({ session, role }) {
       project_id: selectedProject.id,
       assigned_to: assignedList,
       deadline: newTaskDeadline ? new Date(newTaskDeadline).toISOString() : null,
-      status: 'Cần làm'
+      status: 'Cần làm',
+      proof_link: newTaskLink.trim() || null // 🌟 Lưu link tài liệu/báo cáo
     });
 
     if (error) {
@@ -201,6 +208,7 @@ export default function ProjectManagementTab({ session, role }) {
       setNewTaskTitle('');
       setNewTaskDesc('');
       setNewTaskDeadline('');
+      setNewTaskLink('');
       await fetchData();
     }
     setIsSubmittingTask(false);
@@ -264,6 +272,25 @@ export default function ProjectManagementTab({ session, role }) {
     }
   };
 
+  // 🌟 Cập nhật Link báo cáo minh chứng hoặc Ghi chú thảo luận cho Task
+  const handleSaveTaskExtra = async (taskId) => {
+    const { error } = await supabase
+      .from('tasks')
+      .update({ 
+        proof_link: taskProofLink.trim() || null,
+        comments: taskComment.trim() || null 
+      })
+      .eq('id', taskId);
+
+    if (error) {
+      toast.error("Lỗi cập nhật thông tin task: " + error.message);
+    } else {
+      toast.success("✅ Đã lưu cập nhật minh chứng & ghi chú thành công!");
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, proof_link: taskProofLink.trim(), comments: taskComment.trim() } : t));
+      setEditingTaskId(null);
+    }
+  };
+
   // Kiểm tra đề tài thuộc về user hiện tại
   const myProject = projects.find(p => {
     if (!currentUser) return false;
@@ -289,13 +316,17 @@ export default function ProjectManagementTab({ session, role }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
             <div>
               <h3 style={{ margin: 0, color: '#111827', fontSize: '20px' }}>📋 Quản lý Đề tài & Giao nhiều việc</h3>
-              <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>Bấm vào thẻ đề tài bất kỳ để mở popup quản lý nhiệm vụ, xem nhóm thành viên và giao deadline.</p>
+              <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>Bấm vào thẻ đề tài bất kỳ để mở popup quản lý nhiệm vụ, theo dõi tiến độ và giao deadline.</p>
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
             {projects.map(p => {
               const projectTasks = tasks.filter(t => t.project_id === p.id);
+              const completedTasksCount = projectTasks.filter(t => t.status === 'Hoàn thành').length;
+              // 🌟 Tính toán % Tiến độ trực quan
+              const progressPercent = projectTasks.length > 0 ? Math.round((completedTasksCount / projectTasks.length) * 100) : 0;
+
               const isApproving = actionLoadingId === `approve-${p.id}`;
               const isCompleting = actionLoadingId === `complete-${p.id}`;
 
@@ -324,7 +355,6 @@ export default function ProjectManagementTab({ session, role }) {
                         {isApproving ? '⏳ Xử lý...' : (p.progress_status === 'Đề xuất' ? '✔ Duyệt đề tài' : '↩ Trở về Đề xuất')}
                       </button>
                       
-                      {/* Nút Hoàn thành & Xóa chỉ hiện khi đề tài Đang thực hiện */}
                       {p.progress_status === 'Đang thực hiện' && (
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleCompleteProject(p.id, p.title); }} 
@@ -340,13 +370,24 @@ export default function ProjectManagementTab({ session, role }) {
                   <h4 style={{ margin: '0 0 8px 0', color: '#1f2937', fontSize: '17px' }}>{p.title}</h4>
                   <p style={{ fontSize: '13px', color: '#4b5563', marginBottom: '15px', lineHeight: '1.5' }}>{p.description || 'Không có mô tả'}</p>
                   
+                  {/* 🌟 3. THANH TIẾN ĐỘ TRỰC QUAN (PROJECT PROGRESS BAR) */}
+                  <div style={{ marginBottom: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 'bold', color: '#374151', marginBottom: '5px' }}>
+                      <span>📊 Tiến độ hoàn thành:</span>
+                      <span style={{ color: progressPercent === 100 ? '#059669' : '#2563eb' }}>{progressPercent}% ({completedTasksCount}/{projectTasks.length} task)</span>
+                    </div>
+                    <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ width: `${progressPercent}%`, backgroundColor: progressPercent === 100 ? '#10b981' : '#2563eb', height: '100%', transition: 'width 0.4s ease' }}></div>
+                    </div>
+                  </div>
+
                   <div style={{ fontSize: '12px', color: '#374151', marginBottom: '12px', background: '#f3f4f6', padding: '8px 12px', borderRadius: '8px' }}>
                     👥 <b>Thành viên nhóm:</b> {Array.isArray(p.members) && p.members.length ? p.members.join(', ') : p.student_email}
                   </div>
 
                   <div style={{ borderTop: '1px dashed #e5e7eb', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 'bold' }}>📌 Đã giao {projectTasks.length} công việc</span>
-                    <span style={{ fontSize: '12px', background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold' }}>Bấm để quản lý việc ➔</span>
+                    <span style={{ fontSize: '12px', color: '#2563eb', fontWeight: 'bold' }}>📌 Quản lý {projectTasks.length} công việc</span>
+                    <span style={{ fontSize: '12px', background: '#e0f2fe', color: '#0369a1', padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold' }}>Chi tiết ➔</span>
                   </div>
                 </div>
               );
@@ -375,7 +416,6 @@ export default function ProjectManagementTab({ session, role }) {
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', padding: '4px 12px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '20px', fontWeight: 'bold' }}>{myProject.progress_status}</span>
                   
-                  {/* Nút cho phép sinh viên tự hủy/xóa nếu đề tài còn ở trạng thái Đề xuất */}
                   {myProject.progress_status === 'Đề xuất' && (
                     <button 
                       onClick={() => handleDeleteMyProject(myProject.id, myProject.title)}
@@ -390,6 +430,25 @@ export default function ProjectManagementTab({ session, role }) {
 
               <h2 style={{ margin: '10px 0', color: '#111827', fontSize: '22px' }}>{myProject.title}</h2>
               <p style={{ color: '#4b5563', lineHeight: '1.6' }}>{myProject.description}</p>
+
+              {/* 🌟 Thanh tiến độ trực quan phía sinh viên */}
+              {(() => {
+                const groupTasks = tasks.filter(t => t.project_id === myProject.id);
+                const doneCount = groupTasks.filter(t => t.status === 'Hoàn thành').length;
+                const percent = groupTasks.length > 0 ? Math.round((doneCount / groupTasks.length) * 100) : 0;
+                return (
+                  <div style={{ margin: '15px 0 20px 0', backgroundColor: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 'bold', color: '#334155', marginBottom: '6px' }}>
+                      <span>📊 Tiến độ hoàn thành của nhóm:</span>
+                      <span style={{ color: percent === 100 ? '#059669' : '#2563eb' }}>{percent}% ({doneCount}/{groupTasks.length} nhiệm vụ)</span>
+                    </div>
+                    <div style={{ width: '100%', backgroundColor: '#e2e8f0', borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{ width: `${percent}%`, backgroundColor: percent === 100 ? '#10b981' : '#2563eb', height: '100%' }}></div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div style={{ fontSize: '13px', color: '#4b5563', marginTop: '10px' }}>
                 👥 <b>Thành viên nhóm:</b> {Array.isArray(myProject.members) ? myProject.members.join(', ') : myProject.student_email}
               </div>
@@ -397,20 +456,68 @@ export default function ProjectManagementTab({ session, role }) {
               <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '25px 0' }}/>
               
               <h4 style={{ margin: '0 0 15px 0', color: '#dc2626', fontSize: '16px' }}>📌 Danh sách công việc được giao cho nhóm</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {tasks.filter(t => t.project_id === myProject.id).map(t => (
-                  <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb', flexWrap: 'wrap', gap: '10px' }}>
-                    <div>
-                      <h5 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#1f2937' }}>{t.title}</h5>
-                      <div style={{ fontSize: '13px', color: '#4b5563' }}>{t.description}</div>
-                      {t.deadline && <div style={{ fontSize: '12px', color: '#dc2626', marginTop: '6px', fontWeight: 'bold' }}>⏰ Deadline: {new Date(t.deadline).toLocaleString('vi-VN')}</div>}
+                  <div key={t.id} style={{ padding: '16px', backgroundColor: '#f9fafb', borderRadius: '10px', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <h5 style={{ margin: '0 0 5px 0', fontSize: '16px', color: '#1f2937' }}>{t.title}</h5>
+                        <div style={{ fontSize: '13px', color: '#4b5563' }}>{t.description}</div>
+                        {t.deadline && <div style={{ fontSize: '12px', color: '#dc2626', marginTop: '6px', fontWeight: 'bold' }}>⏰ Deadline: {new Date(t.deadline).toLocaleString('vi-VN')}</div>}
+                      </div>
+                      
+                      <button 
+                        onClick={() => handleUpdateTaskStatus(t.id, t.status)} 
+                        style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', backgroundColor: t.status === 'Hoàn thành' ? '#d1fae5' : (t.status === 'Đang làm' ? '#dbeafe' : '#fef3c7'), color: t.status === 'Hoàn thành' ? '#065f46' : (t.status === 'Đang làm' ? '#1e40af' : '#92400e') }}
+                      >
+                        {t.status} (Bấm đổi)
+                      </button>
                     </div>
-                    <button 
-                      onClick={() => handleUpdateTaskStatus(t.id, t.status)} 
-                      style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', backgroundColor: t.status === 'Hoàn thành' ? '#d1fae5' : (t.status === 'Đang làm' ? '#dbeafe' : '#fef3c7'), color: t.status === 'Hoàn thành' ? '#065f46' : (t.status === 'Đang làm' ? '#1e40af' : '#92400e') }}
-                    >
-                      {t.status} (Bấm đổi)
-                    </button>
+
+                    {/* 🌟 1 & 2. Khu vực hiển thị / cập nhật Link minh chứng & Ghi chú thảo luận */}
+                    <div style={{ borderTop: '1px dashed #e5e7eb', paddingTop: '10px', fontSize: '13px' }}>
+                      {t.proof_link && (
+                        <div style={{ marginBottom: '6px' }}>
+                          📎 <b>Minh chứng báo cáo:</b> <a href={t.proof_link} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>{t.proof_link}</a>
+                        </div>
+                      )}
+                      {t.comments && (
+                        <div style={{ marginBottom: '6px', color: '#4b5563', fontStyle: 'italic', backgroundColor: '#fff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+                          💬 <b>Trao đổi / Ghi chú:</b> {t.comments}
+                        </div>
+                      )}
+
+                      {/* Form thu gọn để sinh viên cập nhật link báo cáo hoặc ghi chú */}
+                      {editingTaskId === t.id ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', backgroundColor: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                          <input 
+                            type="text" 
+                            placeholder="Dán link Google Drive / GitHub / Overleaf..." 
+                            value={taskProofLink} 
+                            onChange={e => setTaskProofLink(e.target.value)}
+                            style={{ padding: '8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #d1d5db', width: '100%', boxSizing: 'border-box' }}
+                          />
+                          <input 
+                            type="text" 
+                            placeholder="Thêm ghi chú hoặc phản hồi cho giảng viên..." 
+                            value={taskComment} 
+                            onChange={e => setTaskComment(e.target.value)}
+                            style={{ padding: '8px', fontSize: '13px', borderRadius: '6px', border: '1px solid #d1d5db', width: '100%', boxSizing: 'border-box' }}
+                          />
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => setEditingTaskId(null)} style={{ padding: '5px 10px', background: '#e5e7eb', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Hủy</button>
+                            <button onClick={() => handleSaveTaskExtra(t.id)} style={{ padding: '5px 10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Lưu minh chứng</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => { setEditingTaskId(t.id); setTaskProofLink(t.proof_link || ''); setTaskComment(t.comments || ''); }}
+                          style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0, fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}
+                        >
+                          ✏️ {t.proof_link || t.comments ? 'Chỉnh sửa minh chứng / ghi chú' : '+ Thêm link minh chứng báo cáo hoặc ghi chú'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {tasks.filter(t => t.project_id === myProject.id).length === 0 && <span style={{ color: '#9ca3af', fontSize: '14px', fontStyle: 'italic' }}>Chưa có công việc nào được giao cho đề tài này.</span>}
@@ -487,7 +594,6 @@ export default function ProjectManagementTab({ session, role }) {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                 <button type="button" onClick={() => setIsCreateModalOpen(false)} style={{ padding: '10px 18px', backgroundColor: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Hủy</button>
-                {/* 🌟 Nút gửi khai báo có hiệu ứng loading */}
                 <button type="submit" disabled={isCreatingProj} style={{ padding: '10px 18px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', opacity: isCreatingProj ? 0.7 : 1 }}>
                   {isCreatingProj ? '⏳ Đang gửi...' : 'Gửi khai báo'}
                 </button>
@@ -522,10 +628,14 @@ export default function ProjectManagementTab({ session, role }) {
                 <textarea value={newTaskDesc} onChange={e => setNewTaskDesc(e.target.value)} placeholder="Nội dung cần thực hiện..." rows="2" style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', resize: 'vertical' }} />
               </div>
               <div>
+                <label style={{ fontWeight: 'bold', fontSize: '13px', display: 'block', marginBottom: '5px' }}>Link tài liệu / Tham khảo (tùy chọn):</label>
+                <input type="text" value={newTaskLink} onChange={e => setNewTaskLink(e.target.value)} placeholder="https://..." style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
+              </div>
+              <div>
                 <label style={{ fontWeight: 'bold', fontSize: '13px', display: 'block', marginBottom: '5px' }}>Hạn chót (Deadline):</label>
                 <input type="datetime-local" value={newTaskDeadline} onChange={e => setNewTaskDeadline(e.target.value)} style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} />
               </div>
-              {/* 🌟 Nút giao việc có hiệu ứng loading */}
+
               <button type="submit" disabled={isSubmittingTask} style={{ padding: '10px', backgroundColor: '#ea580c', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', opacity: isSubmittingTask ? 0.7 : 1 }}>
                 {isSubmittingTask ? '⏳ Đang giao việc...' : 'Giao việc ngay'}
               </button>
@@ -538,6 +648,8 @@ export default function ProjectManagementTab({ session, role }) {
                   <div>
                     <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#111827' }}>{t.title}</div>
                     <div style={{ fontSize: '12px', color: '#4b5563' }}>{t.description}</div>
+                    {t.proof_link && <div style={{ fontSize: '11px', color: '#2563eb', marginTop: '2px' }}>📎 Minh chứng: <a href={t.proof_link} target="_blank" rel="noopener noreferrer">{t.proof_link}</a></div>}
+                    {t.comments && <div style={{ fontSize: '11px', color: '#4b5563', fontStyle: 'italic', marginTop: '2px' }}>💬 Ghi chú: {t.comments}</div>}
                     {t.deadline && <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px', fontWeight: 'bold' }}>⏰ {new Date(t.deadline).toLocaleString('vi-VN')}</div>}
                   </div>
                   <span style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px', backgroundColor: t.status === 'Hoàn thành' ? '#d1fae5' : (t.status === 'Đang làm' ? '#dbeafe' : '#fef3c7'), color: t.status === 'Hoàn thành' ? '#065f46' : (t.status === 'Đang làm' ? '#1e40af' : '#92400e'), fontWeight: 'bold' }}>

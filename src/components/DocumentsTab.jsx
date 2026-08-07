@@ -8,7 +8,18 @@ export default function DocumentsTab({ session, role }) {
     const [activeCategory, setActiveCategory] = useState('Đại cương');
     const [loading, setLoading] = useState(true);
 
-    // 🌟 State quản lý trạng thái loading cục bộ cho từng hành động
+    // 🌟 State mới: Từ khóa tìm kiếm & danh sách ID tài liệu được ghim (Lưu trên localStorage hoặc DB)
+    const [searchTerm, setSearchTerm] = useState('');
+    const [pinnedIds, setPinnedIds] = useState(() => {
+        try {
+            const saved = localStorage.getItem('lab211_pinned_docs');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
+
+    // State quản lý trạng thái loading cục bộ cho từng hành động
     const [actionLoading, setActionLoading] = useState(false);
 
     // State cho form thêm tài liệu mới
@@ -57,6 +68,24 @@ export default function DocumentsTab({ session, role }) {
         setLoading(false);
     };
 
+    // 🌟 Hàm xử lý ghim / bỏ ghim tài liệu
+    const togglePinDocument = (id) => {
+        let updated;
+        if (pinnedIds.includes(id)) {
+            updated = pinnedIds.filter(itemIds => itemIds !== id);
+            toast.success("Đã bỏ ghim tài liệu.");
+        } else {
+            updated = [...pinnedIds, id];
+            toast.success("⭐ Đã ghim tài liệu lên đầu danh mục!");
+        }
+        setPinnedIds(updated);
+        try {
+            localStorage.setItem('lab211_pinned_docs', JSON.stringify(updated));
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const handleAddMaterial = async (e) => {
         e.preventDefault();
         if (!title || !driveLink) {
@@ -77,7 +106,7 @@ export default function DocumentsTab({ session, role }) {
             setDescription('');
             setDriveLink('');
             setShowAddForm(false);
-            await fetchMaterials(); // Làm mới dữ liệu ngay lập tức
+            await fetchMaterials();
         }
         setActionLoading(false);
     };
@@ -113,7 +142,7 @@ export default function DocumentsTab({ session, role }) {
         } else {
             toast.success('✨ Cập nhật tài liệu thành công!');
             setEditingItem(null);
-            await fetchMaterials(); // Làm mới dữ liệu ngay lập tức
+            await fetchMaterials();
         }
         setActionLoading(false);
     };
@@ -144,6 +173,22 @@ export default function DocumentsTab({ session, role }) {
             }
         });
     };
+
+    // 🌟 Lọc dữ liệu theo danh mục, từ khóa tìm kiếm và ưu tiên sắp xếp các mục được ghim lên đầu
+    const filteredMaterials = materials
+        .filter(item => item.category === activeCategory)
+        .filter(item => {
+            if (!searchTerm.trim()) return true;
+            const term = searchTerm.toLowerCase();
+            const matchTitle = item.title?.toLowerCase().includes(term);
+            const matchDesc = item.description?.toLowerCase().includes(term);
+            return matchTitle || matchDesc;
+        })
+        .sort((a, b) => {
+            const aPinned = pinnedIds.includes(a.id) ? 1 : 0;
+            const bPinned = pinnedIds.includes(b.id) ? 1 : 0;
+            return bPinned - aPinned; // Đưa các mục được ghim lên trên cùng
+        });
 
     return (
         <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
@@ -186,7 +231,6 @@ export default function DocumentsTab({ session, role }) {
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '5px', color: '#4b5563' }}>Đường dẫn (Google Drive / Link Paper URL):</label>
                         <input type="url" value={driveLink} onChange={(e) => setDriveLink(e.target.value)} placeholder="https://drive.google.com/... hoặc URL bài báo" required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
                     </div>
-                    {/* 🌟 Nút bấm có trạng thái loading cục bộ */}
                     <button type="submit" disabled={actionLoading} style={{ padding: '10px 20px', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: actionLoading ? 0.7 : 1 }}>
                         {actionLoading ? '⏳ Đang lưu...' : 'Lưu tài liệu'}
                     </button>
@@ -218,7 +262,6 @@ export default function DocumentsTab({ session, role }) {
                         <input type="url" value={editDriveLink} onChange={(e) => setEditDriveLink(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        {/* 🌟 Nút bấm cập nhật có trạng thái loading cục bộ */}
                         <button type="submit" disabled={actionLoading} style={{ padding: '10px 20px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', opacity: actionLoading ? 0.7 : 1 }}>
                             {actionLoading ? '⏳ Đang cập nhật...' : 'Cập nhật'}
                         </button>
@@ -227,46 +270,75 @@ export default function DocumentsTab({ session, role }) {
                 </form>
             )}
             
-            {/* Thanh chuyển đổi danh mục tab */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #e5e7eb', paddingBottom: '10px', overflowX: 'auto' }}>
-                {categories.map(cat => (
-                    <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        style={{
-                            padding: '10px 20px',
-                            backgroundColor: activeCategory === cat ? '#2563eb' : '#f3f4f6',
-                            color: activeCategory === cat ? 'white' : '#374151',
-                            border: 'none',
-                            borderRadius: '8px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap'
-                        }}
-                    >
-                        {cat}
-                    </button>
-                ))}
+            {/* Thanh chuyển đổi danh mục tab & 🌟 Thanh Tìm Kiếm Nhanh (Search Bar) */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #e5e7eb', paddingBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(cat)}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: activeCategory === cat ? '#2563eb' : '#f3f4f6',
+                                color: activeCategory === cat ? 'white' : '#374151',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                fontSize: '13.5px'
+                            }}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Ô tìm kiếm nhanh */}
+                <div>
+                    <input 
+                        type="text"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="🔍 Tìm nhanh tài liệu, tác giả..."
+                        style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '13px', width: '240px', outline: 'none', backgroundColor: '#f9fafb' }}
+                    />
+                </div>
             </div>
 
             {/* Danh sách tài liệu thuộc danh mục được chọn */}
             <div style={{ display: 'grid', gap: '15px' }}>
                 {loading ? (
                     <p style={{ textAlign: 'center', color: '#adb5bd', padding: '30px', fontStyle: 'italic' }}>⏳ Đang tải dữ liệu thư viện...</p>
-                ) : materials.filter(item => item.category === activeCategory).length === 0 ? (
+                ) : filteredMaterials.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px dashed #d1d5db' }}>
-                        <p style={{ color: '#6b7280', margin: '0 0 10px 0' }}>Chưa có tài liệu nào trong danh mục <b>{activeCategory}</b>.</p>
-                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Hãy bấm nút "Đóng góp / Thêm tài liệu" ở góc trên để thêm link đầu tiên!</p>
+                        <p style={{ color: '#6b7280', margin: '0 0 10px 0' }}>Không tìm thấy tài liệu phù hợp trong danh mục <b>{activeCategory}</b>.</p>
+                        <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Thử tìm kiếm với từ khóa khác hoặc bấm nút "Đóng góp / Thêm tài liệu" ở góc trên!</p>
                     </div>
                 ) : (
-                    materials
-                        .filter(item => item.category === activeCategory)
-                        .map(item => (
-                            <div key={item.id} style={{ padding: '16px', border: '1px solid #e5e7eb', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                                <div style={{ maxWidth: '65%' }}>
-                                    <h4 style={{ margin: '0 0 5px 0', color: '#111827', fontSize: '16px' }}>{item.title}</h4>
-                                    <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>{item.description || 'Không có mô tả'}</p>
+                    filteredMaterials.map(item => {
+                        const isPinned = pinnedIds.includes(item.id);
+
+                        return (
+                            <div key={item.id} style={{ padding: '16px', border: isPinned ? '1px solid #f59e0b' : '1px solid #e5e7eb', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isPinned ? '#fffbeb' : 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.02)', gap: '15px', flexWrap: 'wrap' }}>
+                                <div style={{ maxWidth: '65%', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                                    {/* 🌟 Nút bấm Ghim / Bỏ ghim tài liệu (Bookmark / Pin) */}
+                                    <button 
+                                        onClick={() => togglePinDocument(item.id)}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', padding: 0, marginTop: '1px', filter: isPinned ? 'none' : 'grayscale(100%) opacity(0.4)', transition: 'filter 0.2s' }}
+                                        title={isPinned ? "Bỏ ghim tài liệu này" : "Ghim tài liệu quan trọng lên đầu"}
+                                    >
+                                        ⭐
+                                    </button>
+                                    <div>
+                                        <h4 style={{ margin: '0 0 5px 0', color: '#111827', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {item.title}
+                                            {isPinned && <span style={{ fontSize: '10px', backgroundColor: '#f59e0b', color: 'white', padding: '2px 6px', borderRadius: '6px', fontWeight: 'bold' }}>Đã ghim</span>}
+                                        </h4>
+                                        <p style={{ margin: 0, color: '#6b7280', fontSize: '13px' }}>{item.description || 'Không có mô tả'}</p>
+                                    </div>
                                 </div>
+
                                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                                     {item.drive_link && (
                                         <a 
@@ -296,7 +368,8 @@ export default function DocumentsTab({ session, role }) {
                                     )}
                                 </div>
                             </div>
-                        ))
+                        );
+                    })
                 )}
             </div>
         </div>

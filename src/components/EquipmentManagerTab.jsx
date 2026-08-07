@@ -12,7 +12,13 @@ export default function EquipmentManagerTab() {
     const [newName, setNewName] = useState('');
     const [newDescription, setNewDescription] = useState('');
 
-    // 🌟 State quản lý trạng thái loading cục bộ cho hành động Thêm và Cập nhật trạng thái
+    // 🌟 State cho Modal Chỉnh Sửa Thiết Bị (Edit)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
+    const [editName, setEditName] = useState('');
+    const [editDescription, setEditDescription] = useState('');
+
+    // State quản lý trạng thái loading cục bộ cho hành động Thêm, Sửa và Cập nhật trạng thái
     const [actionLoading, setActionLoading] = useState(false);
     const [updatingId, setUpdatingId] = useState(null); // Lưu ID thiết bị đang được đổi trạng thái
 
@@ -83,6 +89,41 @@ export default function EquipmentManagerTab() {
         setActionLoading(false); // Tắt trạng thái đang lưu
     };
 
+    // 🌟 Mở Modal Chỉnh Sửa
+    const handleOpenEdit = (eq) => {
+        setEditingItem(eq);
+        setEditName(eq.name);
+        setEditDescription(eq.description || '');
+        setIsEditModalOpen(true);
+    };
+
+    // 🌟 Xử lý Cập nhật Thiết Bị
+    const handleUpdateEquipment = async (e) => {
+        e.preventDefault();
+        if (!editName.trim()) {
+            return toast.error("Vui lòng nhập tên thiết bị!");
+        }
+
+        setActionLoading(true);
+        const { error } = await supabase
+            .from('equipments')
+            .update({
+                name: editName.trim(),
+                description: editDescription.trim()
+            })
+            .eq('id', editingItem.id);
+
+        if (error) {
+            toast.error("Lỗi khi cập nhật thiết bị: " + error.message);
+        } else {
+            toast.success("✨ Cập nhật thông tin thiết bị thành công!");
+            setIsEditModalOpen(false);
+            setEditingItem(null);
+            await fetchEquipments();
+        }
+        setActionLoading(false);
+    };
+
     // Hàm Xóa thiết bị (Dành cho Admin)
     const handleDeleteEquipment = async (id, name) => {
         Swal.fire({
@@ -118,7 +159,7 @@ export default function EquipmentManagerTab() {
                     <div>
                         <h3 style={{ margin: 0, color: '#343a40', fontSize: '18px' }}>🛠 Quản lý Thiết bị Phòng Lab</h3>
                         <p style={{ margin: '5px 0 0 0', color: '#6c757d', fontSize: '14px' }}>
-                            Quản trị viên cập nhật trạng thái hoặc thêm mới thiết bị vào hệ thống.
+                            Quản trị viên cập nhật trạng thái, chỉnh sửa thông tin hoặc thêm mới thiết bị vào hệ thống.
                         </p>
                     </div>
                     {/* Nút mở Popup Thêm Thiết Bị */}
@@ -136,7 +177,7 @@ export default function EquipmentManagerTab() {
                             <th style={{ padding: '15px 25px', color: '#495057' }}>Tên thiết bị</th>
                             <th style={{ padding: '15px', color: '#495057' }}>Mô tả chi tiết</th>
                             <th style={{ padding: '15px', color: '#495057', width: '130px' }}>Trạng thái</th>
-                            <th style={{ padding: '15px 25px', color: '#495057', width: '200px', textAlign: 'center' }}>Thao tác</th>
+                            <th style={{ padding: '15px 25px', color: '#495057', width: '230px', textAlign: 'center' }}>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -173,13 +214,13 @@ export default function EquipmentManagerTab() {
                                         </span>
                                     </td>
                                     <td style={{ padding: '15px 25px', textAlign: 'center' }}>
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                                             {/* Nút báo hỏng / sửa xong có trạng thái loading cục bộ */}
                                             <button 
                                                 onClick={() => toggleStatus(eq.id, eq.status)} 
                                                 disabled={updatingId === eq.id}
                                                 style={{ 
-                                                    padding: '8px 12px', 
+                                                    padding: '8px 10px', 
                                                     background: eq.status === 'Hỏng' ? '#28a745' : '#eab308', 
                                                     color: 'white', 
                                                     border: 'none', 
@@ -192,14 +233,33 @@ export default function EquipmentManagerTab() {
                                                 }}
                                                 title="Đổi trạng thái thiết bị"
                                             >
-                                                {updatingId === eq.id ? '⏳ Đang xử lý...' : (eq.status === 'Bình thường' ? '🚨 Báo hỏng' : '✅ Đã sửa')}
+                                                {updatingId === eq.id ? '⏳...' : (eq.status === 'Bình thường' ? '🚨 Báo hỏng' : '✅ Đã sửa')}
+                                            </button>
+
+                                            {/* 🌟 Nút Chỉnh Sửa */}
+                                            <button 
+                                                onClick={() => handleOpenEdit(eq)}
+                                                style={{ 
+                                                    padding: '8px 10px', 
+                                                    background: '#d97706', 
+                                                    color: 'white', 
+                                                    border: 'none', 
+                                                    borderRadius: '6px', 
+                                                    cursor: 'pointer', 
+                                                    fontSize: '12px', 
+                                                    fontWeight: 'bold',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                }}
+                                                title="Chỉnh sửa thông tin thiết bị"
+                                            >
+                                                ✏️ Sửa
                                             </button>
 
                                             {/* Nút Xóa thiết bị */}
                                             <button 
                                                 onClick={() => handleDeleteEquipment(eq.id, eq.name)} 
                                                 style={{ 
-                                                    padding: '8px 12px', 
+                                                    padding: '8px 10px', 
                                                     background: '#dc3545', 
                                                     color: 'white', 
                                                     border: 'none', 
@@ -260,6 +320,48 @@ export default function EquipmentManagerTab() {
                                 {/* 🌟 Nút lưu có hiệu ứng loading */}
                                 <button type="submit" disabled={actionLoading} style={{ padding: '10px 18px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', opacity: actionLoading ? 0.7 : 1 }}>
                                     {actionLoading ? '⏳ Đang lưu...' : 'Lưu thiết bị'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ================= 🌟 MODAL CHỈNH SỬA THIẾT BỊ ================= */}
+            {isEditModalOpen && (
+                <div style={{ position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: '1000', padding: '20px' }}>
+                    <div style={{ backgroundColor: 'white', width: '100%', maxWidth: '500px', padding: '30px', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h3 style={{ margin: 0, color: '#111827', fontSize: '18px' }}>✏️ Chỉnh Sửa Thông Tin Thiết Bị</h3>
+                            <button onClick={() => setIsEditModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', fontWeight: 'bold', color: '#6b7280' }}>✕</button>
+                        </div>
+
+                        <form onSubmit={handleUpdateEquipment} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <div>
+                                <label style={{ fontWeight: 'bold', fontSize: '13px', display: 'block', marginBottom: '5px' }}>Tên thiết bị: *</label>
+                                <input 
+                                    type="text" 
+                                    value={editName} 
+                                    onChange={e => setEditName(e.target.value)} 
+                                    required 
+                                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }} 
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ fontWeight: 'bold', fontSize: '13px', display: 'block', marginBottom: '5px' }}>Mô tả chi tiết:</label>
+                                <textarea 
+                                    value={editDescription} 
+                                    onChange={e => setEditDescription(e.target.value)} 
+                                    rows="3"
+                                    style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', resize: 'vertical' }} 
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                                <button type="button" onClick={() => setIsEditModalOpen(false)} style={{ padding: '10px 18px', backgroundColor: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Hủy</button>
+                                <button type="submit" disabled={actionLoading} style={{ padding: '10px 18px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', opacity: actionLoading ? 0.7 : 1 }}>
+                                    {actionLoading ? '⏳ Đang cập nhật...' : 'Lưu thay đổi'}
                                 </button>
                             </div>
                         </form>

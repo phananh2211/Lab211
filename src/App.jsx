@@ -43,6 +43,9 @@ export default function App() {
 
   const [showAuthBox, setShowAuthBox] = useState(initialAuth);
   const [currentView, setCurrentView] = useState(initialView);
+  
+  // 🌟 MỚI: State quản lý trạng thái mở/đóng của Menu Mobile
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState('');
@@ -53,6 +56,7 @@ export default function App() {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const handleNavigate = (view) => {
+    setIsMobileMenuOpen(false); // Đóng menu mobile khi click điều hướng
     if (currentView === view && !showAuthBox) return;
     setIsTransitioning(true);
     window.history.pushState({}, '', view === 'dashboard' ? window.location.pathname : `?view=${view}`);
@@ -65,6 +69,7 @@ export default function App() {
   };
 
   const handleOpenAuth = () => {
+    setIsMobileMenuOpen(false); // Đóng menu mobile
     setIsTransitioning(true);
     window.history.pushState({}, '', `?auth=true`);
     setTimeout(() => {
@@ -166,8 +171,10 @@ export default function App() {
         setAvatarUrl('');
         setNotifications([]);
         setMfaRequired(false);
-        setCurrentView('dashboard');
-        setShowAuthBox(false);
+        // 🌟 FIX LỖI F5: Thay vì ép về cứng 'dashboard', đọc chính xác từ URL[cite: 7]
+        const currentUrlView = new URLSearchParams(window.location.search).get('view') || 'dashboard';
+        setCurrentView(currentUrlView);
+        setShowAuthBox(new URLSearchParams(window.location.search).get('auth') === 'true');
       }
     });
     return () => authListener.subscription.unsubscribe();
@@ -406,6 +413,16 @@ export default function App() {
                 .fade-in-box { animation: fadeInScale 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
                 .top-progress-bar { position: fixed; top: 0; left: 0; height: 3px; background-color: #3b82f6; z-index: 9999; box-shadow: 0 0 10px #3b82f6; transition: width 0.3s ease, opacity 0.3s ease; }
                 .page-transition { transition: opacity 0.3s ease; opacity: ${isTransitioning ? '0.6' : '1'}; pointer-events: ${isTransitioning ? 'none' : 'auto'}; }
+                
+                /* 🌟 Tích hợp CSS cho Hamburger Menu Mobile */
+                @media (max-width: 850px) {
+                    .desktop-menu { display: none !important; }
+                    .mobile-menu-btn { display: block !important; }
+                }
+                @media (min-width: 851px) {
+                    .desktop-menu { display: flex !important; }
+                    .mobile-menu-btn { display: none !important; }
+                }
             `}</style>
 
             <div className="top-progress-bar" style={{ width: isTransitioning ? '70%' : '100%', opacity: isTransitioning ? 1 : 0 }}></div>
@@ -424,7 +441,8 @@ export default function App() {
                         <span style={{ color: '#ffffff', fontWeight: '800', fontSize: '16px', letterSpacing: '-0.025em' }}>Lab 211 <span style={{ color: '#3b82f6', fontWeight: '500', fontSize: '13px' }}>Management</span></span>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                    {/* Navbar Desktop */}
+                    <div className="desktop-menu" style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                         {[
                             { id: 'about', label: 'Giới thiệu' },
                             { id: 'faculty', label: 'Giảng viên' },
@@ -445,7 +463,7 @@ export default function App() {
                         ))}
                     </div>
 
-                    <div>
+                    <div className="desktop-menu">
                         <button
                             onClick={handleOpenAuth}
                             style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '8px 18px', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(37,99,235,0.4)', transition: 'all 0.2s' }}
@@ -455,10 +473,47 @@ export default function App() {
                             Đăng nhập hệ thống
                         </button>
                     </div>
+
+                    {/* Nút 3 Gạch cho Mobile */}
+                    <button 
+                        className="mobile-menu-btn" 
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                        style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '24px', cursor: 'pointer', padding: '0 5px' }}
+                    >
+                        {isMobileMenuOpen ? '✕' : '☰'}
+                    </button>
+
+                    {/* Overlay Menu Dọc Dành Cho Mobile */}
+                    {isMobileMenuOpen && (
+                        <div style={{ position: 'absolute', top: '110%', left: 0, width: '100%', backgroundColor: 'rgba(31, 41, 55, 0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', boxSizing: 'border-box' }}>
+                            {[
+                                { id: 'about', label: 'Giới thiệu' },
+                                { id: 'faculty', label: 'Giảng viên' },
+                                { id: 'research', label: 'Nghiên cứu' },
+                                { id: 'projects_info', label: 'Dự án' },
+                                { id: 'terms', label: 'Điều khoản sử dụng' },
+                                { id: 'privacy', label: 'Chính sách bảo mật' }
+                            ].map(item => (
+                                <button
+                                    key={`mob-${item.id}`}
+                                    onClick={() => handleNavigate(item.id)}
+                                    style={{ background: 'none', border: 'none', color: currentView === item.id ? '#60a5fa' : '#e5e7eb', fontSize: '15px', fontWeight: '600', textAlign: 'left', padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', width: '100%', borderRadius: '8px' }}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                            <button
+                                onClick={handleOpenAuth}
+                                style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '12px', fontSize: '15px', fontWeight: '700', marginTop: '10px', width: '100%', textAlign: 'center' }}
+                            >
+                                Đăng nhập hệ thống
+                            </button>
+                        </div>
+                    )}
                 </nav>
 
                 <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '110px 20px 60px 20px', boxSizing: 'border-box', position: 'relative', zIndex: 1, width: '100%' }}>
-                    {/* 👇 ĐÃ THÊM 'public_documents' VÀO MẢNG NÀY ĐỂ FOOTER GỌI ĐƯỢC TRANG BÀI BÁO */}
+                    {/* Kiểm tra đầy đủ currentView để render đúng tab[cite: 7] */}
                     {['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? (
                         <div className="fade-in-box" style={{ width: '100%', maxWidth: '800px', backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(12px)', padding: '30px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)', boxSizing: 'border-box' }}>
                             <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
