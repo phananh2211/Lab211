@@ -413,6 +413,9 @@ export default function SettingsTab({ session, onUpdateUser }) {
     });
   };
 
+  // Lấy thông tin logo của ngân hàng hiện tại đang chọn
+  const currentBankObj = BANK_LIST.find(b => b.code === bankCode);
+
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
@@ -502,9 +505,18 @@ export default function SettingsTab({ session, onUpdateUser }) {
             </div>
           </div>
 
-          {/* 🌟 SECTION THÔNG TIN NGÂN HÀNG */}
+          {/* 🌟 SECTION THÔNG TIN NGÂN HÀNG KÈM HIỂN THỊ ICON LOGO */}
           <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '5px' }}>
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#1e293b' }}>💳 Thông tin tài khoản ngân hàng nhận giải ngân</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h4 style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>💳 Thông tin tài khoản ngân hàng nhận giải ngân</h4>
+              {currentBankObj?.logo && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'white', padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+                  <img src={currentBankObj.logo} alt="Bank Logo" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334151' }}>{currentBankObj.code.toUpperCase()}</span>
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
               <div>
                 <label style={{ fontWeight: 'bold', fontSize: '12px', display: 'block', marginBottom: '5px' }}>Ngân hàng (chuẩn NAPAS):</label>
