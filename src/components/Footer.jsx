@@ -217,7 +217,7 @@ export default function Footer({ onSelectTab }) {
                                 onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#cbd5e1'; }}
                                 title="Chuyển sang Tiếng Việt"
                             >
-                                🇻🇳 VN
+                                VN vi
                             </button>
                             <button 
                                 onClick={() => window.changeLanguage && window.changeLanguage('en')}
@@ -226,7 +226,7 @@ export default function Footer({ onSelectTab }) {
                                 onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#cbd5e1'; }}
                                 title="Switch to English"
                             >
-                                🇬🇧 EN
+                                EN en
                             </button>
                         </div>
                     </div>
