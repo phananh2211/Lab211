@@ -8,6 +8,7 @@ import ProjectManagementTab from './components/ProjectManagementTab';
 import ProcurementTab from './components/ProcurementTab';
 import DocumentsTab from './components/DocumentsTab';
 import InternalTransferTab from './components/InternalTransferTab';
+import InventoryTab from './components/InventoryTab'; // 🌟 MỚI: Import tab quản lý kho
 
 export default function AdminDashboard({ session, onNavigate }) {
     // 1. ĐỌC THAM SỐ TRÊN THANH ĐỊA CHỈ URL
@@ -27,7 +28,7 @@ export default function AdminDashboard({ session, onNavigate }) {
     const handleNavigation = (view) => {
         setLoadingView(view); 
         try {
-            onNavigate(view);     
+            onNavigate(view);    
         } catch (err) {
             console.error("Lỗi chuyển hướng:", err);
             setHasError(true);
@@ -73,6 +74,7 @@ export default function AdminDashboard({ session, onNavigate }) {
     if (currentView === 'procurements') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProcurementTab session={session} role="Admin" /></div>;
     if (currentView === 'documents') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><DocumentsTab session={session} role="Admin" /></div>;
     if (currentView === 'internal_transfers') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><InternalTransferTab session={session} /></div>;
+    if (currentView === 'inventory') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><InventoryTab session={session} /></div>; // 🌟 MỚI: Render tab Quản lý Kho
 
     // 3. MENU CHÍNH DASHBOARD
     const buttonStyle = {
@@ -124,6 +126,16 @@ export default function AdminDashboard({ session, onNavigate }) {
                     {loadingView === 'schedule' && <span style={{ fontSize: '13px', color: '#d9534f', fontWeight: '600' }}>⏳ Đang mở...</span>}
                 </button>
                 
+                {/* 🌟 MỚI: Nút Quản lý Kho Hóa chất & Vật tư tiêu hao */}
+                <button 
+                    onClick={() => handleNavigation('inventory')} 
+                    style={buttonStyle}
+                    disabled={loadingView !== null}
+                >
+                    <span>📦 Quản lý Kho & Vật tư</span>
+                    {loadingView === 'inventory' && <span style={{ fontSize: '13px', color: '#d9534f', fontWeight: '600' }}>⏳ Đang mở...</span>}
+                </button>
+
                 <button 
                     onClick={() => handleNavigation('projects')} 
                     style={buttonStyle}

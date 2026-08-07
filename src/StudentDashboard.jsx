@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
-// 🌟 Import đầy đủ các tab module cho sinh viên
+// 🌟 Cập nhật đường dẫn import từ thư mục components và bổ sung InventoryTab
 import ScheduleTab from './components/ScheduleTab';
 import ProjectManagementTab from './components/ProjectManagementTab';
 import UsersManagerTab from './components/UsersManagerTab';
 import ProcurementTab from './components/ProcurementTab';
 import DocumentsTab from './components/DocumentsTab';
 import InternalTransferTab from './components/InternalTransferTab';
+import InventoryTab from './components/InventoryTab'; // 🌟 MỚI: Import tab quản lý kho
 
 export default function StudentDashboard({ session, onNavigate }) {
     // 1. ĐỌC THAM SỐ TRÊN THANH ĐỊA CHỈ URL
@@ -72,6 +73,7 @@ export default function StudentDashboard({ session, onNavigate }) {
     if (currentView === 'members') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><UsersManagerTab role="Student" /></div>;
     if (currentView === 'documents') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><DocumentsTab session={session} /></div>;
     if (currentView === 'internal_transfers') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><InternalTransferTab session={session} /></div>;
+    if (currentView === 'inventory') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><InventoryTab session={session} /></div>; // 🌟 MỚI: Render tab Quản lý Kho cho sinh viên
 
     // 3. MENU CHÍNH DASHBOARD
     const buttonStyle = {
@@ -114,6 +116,16 @@ export default function StudentDashboard({ session, onNavigate }) {
                     {loadingView === 'myProject' && <span style={{ fontSize: '13px', color: '#059669', fontWeight: '600' }}>⏳ Đang mở...</span>}
                 </button>
                 
+                {/* 🌟 MỚI: Nút Quản lý Kho & Vật tư cho Sinh viên */}
+                <button 
+                    onClick={() => handleNavigation('inventory')} 
+                    style={buttonStyle}
+                    disabled={loadingView !== null}
+                >
+                    <span>📦 Quản lý Kho & Vật tư</span>
+                    {loadingView === 'inventory' && <span style={{ fontSize: '13px', color: '#059669', fontWeight: '600' }}>⏳ Đang mở...</span>}
+                </button>
+
                 <button 
                     onClick={() => handleNavigation('procurements')} 
                     style={buttonStyle}
