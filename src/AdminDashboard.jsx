@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// 🌟 Cập nhật đường dẫn import từ thư mục components (Bổ sung InternalTransferTab)
+// 🌟 Cập nhật đường dẫn import từ thư mục components
 import EquipmentManagerTab from './components/EquipmentManagerTab';
 import UsersManagerTab from './components/UsersManagerTab';
 import ScheduleTab from './components/ScheduleTab';
@@ -14,7 +14,7 @@ export default function AdminDashboard({ session, onNavigate }) {
     const queryParams = new URLSearchParams(window.location.search);
     const currentView = queryParams.get('view');
 
-    // 🌟 Quản lý state loading thích ứng và trạng thái lỗi mạng
+    // Quản lý state loading thích ứng và trạng thái lỗi mạng
     const [loadingView, setLoadingView] = useState(null);
     const [hasError, setHasError] = useState(false);
 
@@ -24,22 +24,10 @@ export default function AdminDashboard({ session, onNavigate }) {
         setHasError(false);
     }, [currentView]);
 
-    // 🌟 Hàm tiện ích tự động thử lại (Retry) khi có sự cố mạng chập chờn
-    const retryAsync = async (fn, retries = 3, delay = 1000) => {
-        for (let i = 0; i < retries; i++) {
-            try {
-                return await fn();
-            } catch (err) {
-                if (i === retries - 1) throw err;
-                await new Promise(res => setTimeout(res, delay));
-            }
-        }
-    };
-
     const handleNavigation = (view) => {
-        setLoadingView(view); // Kích hoạt hiệu ứng chữ "Đang mở..." ngay lập tức
+        setLoadingView(view); 
         try {
-            onNavigate(view);     // Gọi hàm điều hướng của App.jsx
+            onNavigate(view);     
         } catch (err) {
             console.error("Lỗi chuyển hướng:", err);
             setHasError(true);
@@ -62,7 +50,6 @@ export default function AdminDashboard({ session, onNavigate }) {
         transition: 'background-color 0.2s'
     };
 
-    // Nếu xảy ra lỗi mạng khi tải tab, hiển thị giao diện thông báo và nút thử lại
     if (hasError) {
         return (
             <div className="fade-in-box" style={{ padding: '40px', textAlign: 'center' }}>
@@ -78,13 +65,13 @@ export default function AdminDashboard({ session, onNavigate }) {
         );
     }
 
-    // 2. NẾU ĐANG CHỌN 1 CHỨC NĂNG CỤ THỂ, HIỂN THỊ NÓ VÀ KÈM NÚT "QUAY LẠI" (KÈM ANIMATION FADE-IN)
-    if (currentView === 'equipments') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><EquipmentManagerTab retryAsync={retryAsync} /></div>;
-    if (currentView === 'users') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><UsersManagerTab role="Admin" retryAsync={retryAsync} /></div>;
-    if (currentView === 'schedule') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ScheduleTab session={session} role="Admin" retryAsync={retryAsync} /></div>;
-    if (currentView === 'projects') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProjectManagementTab session={session} role="Admin" retryAsync={retryAsync} /></div>;
-    if (currentView === 'procurements') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProcurementTab session={session} role="Admin" retryAsync={retryAsync} /></div>;
-    if (currentView === 'documents') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><DocumentsTab session={session} role="Admin" retryAsync={retryAsync} /></div>;
+    // 2. NẾU ĐANG CHỌN 1 CHỨC NĂNG CỤ THỂ, HIỂN THỊ NÓ VÀ KÈM NÚT "QUAY LẠI"
+    if (currentView === 'equipments') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><EquipmentManagerTab /></div>;
+    if (currentView === 'users') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><UsersManagerTab role="Admin" /></div>;
+    if (currentView === 'schedule') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ScheduleTab session={session} role="Admin" /></div>;
+    if (currentView === 'projects') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProjectManagementTab session={session} role="Admin" /></div>;
+    if (currentView === 'procurements') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProcurementTab session={session} role="Admin" /></div>;
+    if (currentView === 'documents') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><DocumentsTab session={session} role="Admin" /></div>;
     if (currentView === 'internal_transfers') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><InternalTransferTab session={session} /></div>;
 
     // 3. MENU CHÍNH DASHBOARD

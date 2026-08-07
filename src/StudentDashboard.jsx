@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// 🌟 Cập nhật đường dẫn import từ thư mục components (Bổ sung InternalTransferTab)
+// 🌟 Import đầy đủ các tab module cho sinh viên
 import ScheduleTab from './components/ScheduleTab';
 import ProjectManagementTab from './components/ProjectManagementTab';
 import UsersManagerTab from './components/UsersManagerTab';
@@ -13,7 +13,7 @@ export default function StudentDashboard({ session, onNavigate }) {
     const queryParams = new URLSearchParams(window.location.search);
     const currentView = queryParams.get('view');
 
-    // 🌟 Quản lý state loading thích ứng và trạng thái lỗi mạng
+    // Quản lý state loading thích ứng và trạng thái lỗi mạng
     const [loadingView, setLoadingView] = useState(null);
     const [hasError, setHasError] = useState(false);
 
@@ -22,18 +22,6 @@ export default function StudentDashboard({ session, onNavigate }) {
         setLoadingView(null);
         setHasError(false);
     }, [currentView]);
-
-    // 🌟 Hàm tiện ích tự động thử lại (Retry) khi có sự cố mạng chập chờn
-    const retryAsync = async (fn, retries = 3, delay = 1000) => {
-        for (let i = 0; i < retries; i++) {
-            try {
-                return await fn();
-            } catch (err) {
-                if (i === retries - 1) throw err;
-                await new Promise(res => setTimeout(res, delay));
-            }
-        }
-    };
 
     const handleNavigation = (view) => {
         setLoadingView(view); // Kích hoạt trạng thái loading ngay lập tức trên nút
@@ -77,12 +65,12 @@ export default function StudentDashboard({ session, onNavigate }) {
         );
     }
 
-    // 2. NẾU ĐANG CHỌN 1 CHỨC NĂNG CỤ THỂ, HIỂN THỊ NÓ VÀ KÈM NÚT "QUAY LẠI" (KÈM ANIMATION FADE-IN)
-    if (currentView === 'schedule') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ScheduleTab session={session} role="Student" retryAsync={retryAsync} /></div>;
-    if (currentView === 'myProject') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProjectManagementTab session={session} role="Student" retryAsync={retryAsync} /></div>;
-    if (currentView === 'procurements') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProcurementTab session={session} role="Student" retryAsync={retryAsync} /></div>;
-    if (currentView === 'members') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><UsersManagerTab role="Student" retryAsync={retryAsync} /></div>;
-    if (currentView === 'documents') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><DocumentsTab session={session} retryAsync={retryAsync} /></div>;
+    // 2. NẾU ĐANG CHỌN 1 CHỨC NĂNG CỤ THỂ, HIỂN THỊ NÓ VÀ KÈM NÚT "QUAY LẠI"
+    if (currentView === 'schedule') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ScheduleTab session={session} role="Student" /></div>;
+    if (currentView === 'myProject') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProjectManagementTab session={session} role="Student" /></div>;
+    if (currentView === 'procurements') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><ProcurementTab session={session} role="Student" /></div>;
+    if (currentView === 'members') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><UsersManagerTab role="Student" /></div>;
+    if (currentView === 'documents') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><DocumentsTab session={session} /></div>;
     if (currentView === 'internal_transfers') return <div className="fade-in-box"><button onClick={() => handleNavigation('dashboard')} style={backBtn}>{loadingView === 'dashboard' ? '⏳ Đang xử lý...' : '⬅ Quay lại Menu'}</button><InternalTransferTab session={session} /></div>;
 
     // 3. MENU CHÍNH DASHBOARD
