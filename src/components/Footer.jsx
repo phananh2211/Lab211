@@ -185,24 +185,50 @@ export default function Footer({ onSelectTab }) {
                     <div>
                         © {new Date().getFullYear()} Lab 211 — Đại học Bách khoa Hà Nội. All rights reserved.
                     </div>
-                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                        <span 
-                            onClick={() => { if (onSelectTab) onSelectTab('privacy'); }}
-                            style={{ cursor: 'pointer', transition: 'color 0.2s' }} 
-                            onMouseEnter={e => e.target.style.color = '#fff'} 
-                            onMouseLeave={e => e.target.style.color = '#64748b'}
-                        >
-                            Bảo mật thông tin
-                        </span>
-                        <span>•</span>
-                        <span 
-                            onClick={() => { if (onSelectTab) onSelectTab('terms'); }}
-                            style={{ cursor: 'pointer', transition: 'color 0.2s' }} 
-                            onMouseEnter={e => e.target.style.color = '#fff'} 
-                            onMouseLeave={e => e.target.style.color = '#64748b'}
-                        >
-                            Điều khoản sử dụng
-                        </span>
+                    
+                    {/* Khu vực chứa liên kết chính sách và Nút chuyển đổi ngôn ngữ ở góc phải */}
+                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                            <span 
+                                onClick={() => { if (onSelectTab) onSelectTab('privacy'); }}
+                                style={{ cursor: 'pointer', transition: 'color 0.2s' }} 
+                                onMouseEnter={e => e.target.style.color = '#fff'} 
+                                onMouseLeave={e => e.target.style.color = '#64748b'}
+                            >
+                                Bảo mật thông tin
+                            </span>
+                            <span>•</span>
+                            <span 
+                                onClick={() => { if (onSelectTab) onSelectTab('terms'); }}
+                                style={{ cursor: 'pointer', transition: 'color 0.2s' }} 
+                                onMouseEnter={e => e.target.style.color = '#fff'} 
+                                onMouseLeave={e => e.target.style.color = '#64748b'}
+                            >
+                                Điều khoản sử dụng
+                            </span>
+                        </div>
+
+                        {/* Nút bấm chuyển đổi ngôn ngữ tích hợp Google Translate Widget */}
+                        <div style={{ display: 'flex', gap: '4px', backgroundColor: '#1e293b', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                            <button 
+                                onClick={() => window.changeLanguage && window.changeLanguage('vi')}
+                                style={{ background: 'transparent', border: 'none', color: '#cbd5e1', fontSize: '11.5px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s' }}
+                                onMouseEnter={e => { e.target.style.backgroundColor = '#334151'; e.target.style.color = '#fff'; }}
+                                onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#cbd5e1'; }}
+                                title="Chuyển sang Tiếng Việt"
+                            >
+                                🇻🇳 VN
+                            </button>
+                            <button 
+                                onClick={() => window.changeLanguage && window.changeLanguage('en')}
+                                style={{ background: 'transparent', border: 'none', color: '#cbd5e1', fontSize: '11.5px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s' }}
+                                onMouseEnter={e => { e.target.style.backgroundColor = '#334151'; e.target.style.color = '#fff'; }}
+                                onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#cbd5e1'; }}
+                                title="Switch to English"
+                            >
+                                🇬🇧 EN
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
