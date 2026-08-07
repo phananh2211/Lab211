@@ -511,7 +511,7 @@ export default function SettingsTab({ session, onUpdateUser }) {
               <h4 style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>💳 Thông tin tài khoản ngân hàng nhận giải ngân</h4>
               {currentBankObj?.logo && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'white', padding: '4px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                  <img src={currentBankObj.logo} alt="Bank Logo" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+                  <img src={currentBankObj.logo} alt="Bank Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
                   <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#334151' }}>{currentBankObj.code.toUpperCase()}</span>
                 </div>
               )}
