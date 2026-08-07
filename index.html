@@ -21,12 +21,19 @@
         }, 'google_translate_element');
       }
 
-      // Hàm gọi chuyển đổi ngôn ngữ toàn cục
-      window.changeLanguage = function(langCode) {
+      // Hàm gọi chuyển đổi ngôn ngữ toàn cục có tích hợp cơ chế chờ (retry)
+      window.changeLanguage = function(langCode, retryCount = 0) {
         var selectField = document.querySelector(".goog-te-combo");
         if (selectField) {
           selectField.value = langCode;
           selectField.dispatchEvent(new Event('change'));
+        } else if (retryCount < 10) {
+          // Nếu Google Translate chưa tải xong select, đợi 300ms rồi thử lại tối đa 10 lần
+          setTimeout(function() {
+            window.changeLanguage(langCode, retryCount + 1);
+          }, 300);
+        } else {
+          console.warn("Google Translate chưa sẵn sàng để chuyển ngôn ngữ.");
         }
       }
     </script>

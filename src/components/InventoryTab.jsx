@@ -138,8 +138,8 @@ export default function InventoryTab({ session }) {
             <option value="Hóa chất">Hóa chất</option>
             <option value="Linh kiện">Linh kiện điện tử</option>
             <option value="Vật tư tiêu hao">Vật tư tiêu hao</option>
-            <option value="Dụng cụ thí nghiệm">Dụng cụ thí nghiệm[cite: 8]</option>
-            <option value="Vật liệu mài bóng & chuẩn bị mẫu">Vật liệu mài bóng & chuẩn bị mẫu[cite: 8]</option>
+            <option value="Dụng cụ thí nghiệm">Dụng cụ thí nghiệm</option>
+            <option value="Vật liệu mài bóng & chuẩn bị mẫu">Vật liệu mài bóng & chuẩn bị mẫu</option>
             <option value="Mẫu vật liệu">Mẫu vật liệu</option>
             <option value="Khác">Khác</option>
           </select>
