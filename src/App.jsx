@@ -6,11 +6,11 @@ import StudentDashboard from './StudentDashboard';
 import SettingsTab from './components/SettingsTab'; 
 import Footer from './components/Footer'; 
 import PublicContent from './components/PublicContent'; 
+import MfaVerification from './components/MfaVerification'; // 🌟 Đã tách component MFA
 import { Toaster, toast } from 'react-hot-toast';
-import { initializeApp } from "firebase/app"; // 🌟 MỚI: Thêm Firebase app
-import { getMessaging, getToken } from "firebase/messaging"; // 🌟 MỚI: Thêm Firebase messaging
+import { initializeApp } from "firebase/app";
+import { getMessaging, getToken } from "firebase/messaging";
 
-// 🌟 MỚI: Cấu hình Firebase Web Push (Thay thế các thông số cấu hình Firebase của dự án bạn)
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_AUTH_DOMAIN",
@@ -23,7 +23,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
-// 🌟 MỚI: Hàm xin quyền và đăng ký Web Push Token
 const requestNotificationPermission = async (userEmail) => {
   try {
     const permission = await Notification.requestPermission();
@@ -54,7 +53,6 @@ export default function App() {
 
   const [initialAppLoad, setInitialAppLoad] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [session, setSession] = useState(null);
@@ -83,7 +81,6 @@ export default function App() {
 
   const [mfaRequired, setMfaRequired] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState('');
-  const [mfaCode, setMfaCode] = useState('');
 
   const [notifications, setNotifications] = useState([]);
   const [showNotif, setShowNotif] = useState(false);
@@ -164,7 +161,7 @@ export default function App() {
             }
             setSession(session);
             await fetchUserInfoWithRetry(session.user.email);
-            requestNotificationPermission(session.user.email); // 🌟 MỚI: Xin quyền và lưu FCM token khi khởi động có session
+            requestNotificationPermission(session.user.email);
         }
       } catch (err) {
         console.error("Lỗi khởi tạo phiên:", err);
@@ -196,7 +193,7 @@ export default function App() {
           }
           setSession(session);
           await fetchUserInfoWithRetry(session.user.email);
-          requestNotificationPermission(session.user.email); // 🌟 MỚI: Xin quyền và lưu FCM token khi thay đổi trạng thái đăng nhập
+          requestNotificationPermission(session.user.email);
         } catch (err) {
           console.error("Lỗi xác thực sự kiện auth:", err);
         }
@@ -350,7 +347,7 @@ export default function App() {
           } else {
               if (authData?.session?.user?.email) {
                   await fetchUserInfoWithRetry(authData.session.user.email);
-                  requestNotificationPermission(authData.session.user.email); // 🌟 MỚI: Xin quyền nhận thông báo sau khi đăng nhập thành công
+                  requestNotificationPermission(authData.session.user.email);
               }
               toast.success("Đăng nhập thành công!");
               setLoading(false);
@@ -377,37 +374,6 @@ export default function App() {
       toast.error("Lỗi: " + err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleVerifyLoginMfa = async (e) => {
-    e.preventDefault();
-    setIsLoggingIn(true);
-    setLoading(true);
-    try {
-      const challengeData = await retryAsync(async () => {
-        const res = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
-        if (res.error) throw res.error;
-        return res.data;
-      });
-
-      await retryAsync(async () => {
-        const res = await supabase.auth.mfa.verify({ factorId: mfaFactorId, challengeId: challengeData.id, code: mfaCode });
-        if (res.error) throw res.error;
-        return res;
-      });
-      
-      if (session?.user?.email) {
-          await fetchUserInfoWithRetry(session.user.email);
-          requestNotificationPermission(session.user.email); // 🌟 MỚI: Lưu token sau khi xác thực MFA xong
-      }
-      toast.success("🛡️ Xác thực MFA thành công!");
-      setMfaRequired(false);
-    } catch (err) { 
-        toast.error("Mã OTP không đúng hoặc lỗi mạng: " + err.message); 
-    } finally { 
-        setLoading(false); 
-        setIsLoggingIn(false); 
     }
   };
 
@@ -441,14 +407,12 @@ export default function App() {
       return (
         <>
             <Toaster position="top-center" reverseOrder={false} />
-            
             <style>{`
                 html, body, #root { margin: 0 !important; padding: 0 !important; width: 100%; height: 100%; overflow-x: hidden; }
                 @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
                 .fade-in-box { animation: fadeInScale 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
                 .top-progress-bar { position: fixed; top: 0; left: 0; height: 3px; background-color: #3b82f6; z-index: 9999; box-shadow: 0 0 10px #3b82f6; transition: width 0.3s ease, opacity 0.3s ease; }
                 .page-transition { transition: opacity 0.3s ease; opacity: ${isTransitioning ? '0.6' : '1'}; pointer-events: ${isTransitioning ? 'none' : 'auto'}; }
-                
                 @media (max-width: 850px) {
                     .desktop-menu { display: none !important; }
                     .mobile-menu-btn { display: block !important; }
@@ -462,7 +426,6 @@ export default function App() {
             <div className="top-progress-bar" style={{ width: isTransitioning ? '70%' : '100%', opacity: isTransitioning ? 1 : 0 }}></div>
             
             <div className="page-transition" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, -apple-system, sans-serif', position: 'relative', width: '100vw', boxSizing: 'border-box' }}>
-                
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, display: 'flex', overflow: 'hidden', backgroundColor: '#000' }}>
                     <img src={`${import.meta.env.BASE_URL}b8888933-aba8-4830-96f8-4df2fad74008.jpg`} alt="Background 1" style={{ flex: 1, width: '50%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%', filter: 'blur(3px) brightness(0.9)' }} />
                     <img src={`${import.meta.env.BASE_URL}93c050fd-70d4-4466-b760-6e4c8bfc210e.jpg`} alt="Background 2" style={{ flex: 1, width: '50%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%', filter: 'blur(3px) brightness(0.9)' }} />
@@ -683,30 +646,6 @@ export default function App() {
       );
   }
 
-  if (mfaRequired) {
-      return (
-          <>
-              <Toaster position="top-center" />
-              <div style={{ backgroundColor: '#f3f4f6', minHeight: '100vh', padding: '12px', fontFamily: 'system-ui, -apple-system, sans-serif', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, padding: '10px 0', boxSizing: 'border-box' }}>
-                      <div style={{ width: '100%', maxWidth: '400px', padding: '30px 20px', backgroundColor: 'white', borderRadius: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', textAlign: 'center', boxSizing: 'border-box' }}>
-                          <h2 style={{ color: '#1f2937', marginBottom: '10px' }}>🛡️ Xác thực MFA</h2>
-                          <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>Nhập mã 6 chữ số từ ứng dụng Google Authenticator của bạn.</p>
-                          <form onSubmit={handleVerifyLoginMfa} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                              <input type="text" value={mfaCode} onChange={e => setMfaCode(e.target.value)} placeholder="000000" maxLength={6} required style={{ width: '100%', padding: '12px', fontSize: '20px', textAlign: 'center', letterSpacing: '4px', borderRadius: '8px', border: '1px solid #d1d5db', boxSizing: 'border-box', fontWeight: 'bold' }} />
-                              <button type="submit" disabled={loading} style={{ padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>{loading ? 'Đang xác thực...' : 'Xác nhận đăng nhập'}</button>
-                              <button type="button" onClick={() => supabase.auth.signOut()} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}>Hủy bỏ & Đăng nhập lại</button>
-                          </form>
-                      </div>
-                  </div>
-                  <div style={{ maxWidth: '1200px', width: '100%', margin: '15px auto 0 auto', boxSizing: 'border-box' }}>
-                      <Footer onSelectTab={handleNavigate} />
-                  </div>
-              </div>
-          </>
-      );
-  }
-
   const sessionWithRole = { ...session, role: userRole };
 
   return (
@@ -727,65 +666,73 @@ export default function App() {
             
             <div style={{ flex: '1 0 auto', width: '100%', maxWidth: '1200px', margin: '20px auto 0 auto', backgroundColor: 'white', padding: '16px 20px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', boxSizing: 'border-box' }}>
                 
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #f3f4f6', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', minWidth: 0, flex: 1 }} onClick={() => handleNavigate('dashboard')}>
-                        <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontSize: '16px', fontWeight: 'bold', overflow: 'hidden', border: '1px solid #d1d5db', flexShrink: 0 }}>
-                            {avatarUrl ? <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (userName || session.user.email).charAt(0).toUpperCase()}
-                        </div>
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ fontSize: '15px', color: '#111827', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Xin chào, <span style={{ color: '#2563eb' }}>{userName || session.user.email}</span> </div>
-                            <div style={{ marginTop: '3px' }}><span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px', fontWeight: 'bold', backgroundColor: userRole === 'Admin' ? '#fee2e2' : (userRole === 'Lecturer' ? '#fef3c7' : '#e0f2fe'), color: userRole === 'Admin' ? '#991b1b' : (userRole === 'Lecturer' ? '#92400e' : '#075985') }}>{userRole === 'Admin' ? 'Quản trị viên' : (userRole === 'Lecturer' ? 'Giảng viên' : 'Sinh viên')}</span></div>
-                        </div>
-                    </div>
-                    
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <div style={{ position: 'relative' }}>
-                            <button onClick={() => setShowNotif(!showNotif)} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '38px', height: '38px', fontSize: '18px', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }}>🔔{unreadCount > 0 && <span style={{ position: 'absolute', top: '-2px', right: '-4px', backgroundColor: '#ef4444', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px', border: '2px solid white' }}>{unreadCount > 9 ? '9+' : unreadCount}</span>}</button>
-                            {showNotif && (
-                                <div style={{ position: 'absolute', top: '48px', right: '0', width: '90vw', maxWidth: '320px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', border: '1px solid #e5e7eb', zIndex: 1000, overflow: 'hidden', boxSizing: 'border-box' }}>
-                                    <div style={{ padding: '12px 14px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb' }}>
-                                        <h4 style={{ margin: 0, fontSize: '14px', color: '#111827' }}>Thông báo mới</h4>
-                                        {unreadCount > 0 && <button onClick={markAllAsRead} style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>Đã đọc tất cả</button>}
-                                    </div>
-                                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                        {notifications.length === 0 ? <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>Chưa có thông báo nào</div> : notifications.map(n => (
-                                            <div key={n.id} onClick={() => markAsRead(n.id)} className="notif-item" style={{ padding: '12px 14px', borderBottom: '1px solid #f3f4f6', backgroundColor: n.is_read ? 'white' : '#eff6ff', cursor: 'pointer' }}>
-                                                <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827', marginBottom: '3px' }}>{n.title}</div>
-                                                <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: '1.4' }}>{n.message}</div>
-                                                <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <button onClick={() => handleNavigate(currentView === 'settings' ? 'dashboard' : 'settings')} style={{ background: currentView === 'settings' ? '#2563eb' : '#f3f4f6', color: currentView === 'settings' ? 'white' : 'black', border: 'none', borderRadius: '50%', width: '38px', height: '38px', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }} title="Cài đặt tài khoản & MFA">⚙️</button>
-                        <button onClick={() => { supabase.auth.signOut(); toast.success("Đã đăng xuất"); }} style={{ padding: '8px 12px', cursor: 'pointer', border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', borderRadius: '8px', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}><span>Thoát</span> <span>🚪</span></button>
-                    </div>
-                </div>
-
-                {currentView === 'settings' ? (
-                    <SettingsTab 
-                        session={sessionWithRole} 
-                        onUpdateUser={() => fetchUserInfoWithRetry(session.user.email)} 
-                    />
-                ) : ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? ( 
-                    <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
-                ) : userRole === 'Admin' ? (
-                    <AdminDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
-                ) : userRole === 'Lecturer' ? (
-                    <LecturerDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
-                ) : userRole === 'Student' ? (
-                    <StudentDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
+                {/* 🌟 RENDER LUỒNG CHÍNH: MFA HOẶC DASHBOARD */}
+                {mfaRequired ? (
+                    <MfaVerification factorId={mfaFactorId} onVerifySuccess={() => setMfaRequired(false)} />
                 ) : (
-                    <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444', fontSize: '15px', fontWeight: '600', backgroundColor: '#fee2e2', borderRadius: '12px' }}>
-                        Tài khoản của bạn chưa được cấp quyền truy cập hợp lệ.
-                    </div>
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #f3f4f6', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', minWidth: 0, flex: 1 }} onClick={() => handleNavigate('dashboard')}>
+                                <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontSize: '16px', fontWeight: 'bold', overflow: 'hidden', border: '1px solid #d1d5db', flexShrink: 0 }}>
+                                    {avatarUrl ? <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (userName || session.user.email).charAt(0).toUpperCase()}
+                                </div>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontSize: '15px', color: '#111827', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Xin chào, <span style={{ color: '#2563eb' }}>{userName || session.user.email}</span> </div>
+                                    <div style={{ marginTop: '3px' }}><span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px', fontWeight: 'bold', backgroundColor: userRole === 'Admin' ? '#fee2e2' : (userRole === 'Lecturer' ? '#fef3c7' : '#e0f2fe'), color: userRole === 'Admin' ? '#991b1b' : (userRole === 'Lecturer' ? '#92400e' : '#075985') }}>{userRole === 'Admin' ? 'Quản trị viên' : (userRole === 'Lecturer' ? 'Giảng viên' : 'Sinh viên')}</span></div>
+                                </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                <div style={{ position: 'relative' }}>
+                                    <button onClick={() => setShowNotif(!showNotif)} style={{ background: '#f3f4f6', border: 'none', borderRadius: '50%', width: '38px', height: '38px', fontSize: '18px', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }}>🔔{unreadCount > 0 && <span style={{ position: 'absolute', top: '-2px', right: '-4px', backgroundColor: '#ef4444', color: 'white', fontSize: '10px', fontWeight: 'bold', padding: '1px 5px', borderRadius: '10px', border: '2px solid white' }}>{unreadCount > 9 ? '9+' : unreadCount}</span>}</button>
+                                    {showNotif && (
+                                        <div style={{ position: 'absolute', top: '48px', right: '0', width: '90vw', maxWidth: '320px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', border: '1px solid #e5e7eb', zIndex: 1000, overflow: 'hidden', boxSizing: 'border-box' }}>
+                                            <div style={{ padding: '12px 14px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb' }}>
+                                                <h4 style={{ margin: 0, fontSize: '14px', color: '#111827' }}>Thông báo mới</h4>
+                                                {unreadCount > 0 && <button onClick={markAllAsRead} style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>Đã đọc tất cả</button>}
+                                            </div>
+                                            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                                {notifications.length === 0 ? <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>Chưa có thông báo nào</div> : notifications.map(n => (
+                                                    <div key={n.id} onClick={() => markAsRead(n.id)} className="notif-item" style={{ padding: '12px 14px', borderBottom: '1px solid #f3f4f6', backgroundColor: n.is_read ? 'white' : '#eff6ff', cursor: 'pointer' }}>
+                                                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827', marginBottom: '3px' }}>{n.title}</div>
+                                                        <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: '1.4' }}>{n.message}</div>
+                                                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button onClick={() => handleNavigate(currentView === 'settings' ? 'dashboard' : 'settings')} style={{ background: currentView === 'settings' ? '#2563eb' : '#f3f4f6', color: currentView === 'settings' ? 'white' : 'black', border: 'none', borderRadius: '50%', width: '38px', height: '38px', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }} title="Cài đặt tài khoản & MFA">⚙️</button>
+                                <button onClick={() => { supabase.auth.signOut(); toast.success("Đã đăng xuất"); }} style={{ padding: '8px 12px', cursor: 'pointer', border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', borderRadius: '8px', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}><span>Thoát</span> <span>🚪</span></button>
+                            </div>
+                        </div>
+
+                        {currentView === 'settings' ? (
+                            <SettingsTab 
+                                session={sessionWithRole} 
+                                onUpdateUser={() => fetchUserInfoWithRetry(session.user.email)} 
+                            />
+                        ) : ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? ( 
+                            <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
+                        ) : userRole === 'Admin' ? (
+                            <AdminDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
+                        ) : userRole === 'Lecturer' ? (
+                            <LecturerDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
+                        ) : userRole === 'Student' ? (
+                            <StudentDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
+                        ) : (
+                            <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444', fontSize: '15px', fontWeight: '600', backgroundColor: '#fee2e2', borderRadius: '12px' }}>
+                                Tài khoản của bạn chưa được cấp quyền truy cập hợp lệ.
+                            </div>
+                        )}
+                    </>
                 )}
 
             </div>
 
+            {/* Footer luôn được giữ đồng bộ ở dưới cùng */}
             <div style={{ width: '100%', flexShrink: 0, marginTop: '40px' }}>
                 <Footer onSelectTab={handleNavigate} />
             </div>
