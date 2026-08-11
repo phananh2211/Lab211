@@ -28,7 +28,7 @@ export default function Footer({ onSelectTab }) {
                             boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                         }}>
                             <img 
-                                src={`${import.meta.env.BASE_URL}211.png`} 
+                                src={`${import.meta.env.BASE_URL}hust.png`} 
                                 alt="Logo Bách khoa" 
                                 style={{ width: '38px', height: '38px', objectFit: 'contain' }}
                                 onError={(e) => { e.target.style.display = 'none'; }}
