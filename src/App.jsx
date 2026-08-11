@@ -383,7 +383,7 @@ export default function App() {
       return (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', fontFamily: 'system-ui', zIndex: 999999 }}>
               <img 
-                  src={`${import.meta.env.BASE_URL}211.jpg`} 
+                  src={`${import.meta.env.BASE_URL}Icon.png`} 
                   alt="Lab 211 Logo" 
                   style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '16px', marginBottom: '20px', animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
                   onError={(e) => { e.target.style.display = 'none'; }}
