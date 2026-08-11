@@ -383,7 +383,7 @@ export default function App() {
       return (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', fontFamily: 'system-ui', zIndex: 999999 }}>
               <img 
-                  src={`${import.meta.env.BASE_URL}211.png`} 
+                  src={`${import.meta.env.BASE_URL}211.jpg`} 
                   alt="Lab 211 Logo" 
                   style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '16px', marginBottom: '20px', animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}
                   onError={(e) => { e.target.style.display = 'none'; }}
@@ -434,7 +434,7 @@ export default function App() {
 
                 <nav style={{ position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: '1200px', backgroundColor: 'rgba(31, 41, 55, 0.75)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '16px', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 100, boxShadow: '0 10px 30px rgba(0,0,0,0.3)', boxSizing: 'border-box' }}>
                     <div onClick={() => handleNavigate('dashboard')} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                        <img src={`${import.meta.env.BASE_URL}211.png`} alt="Logo Lab" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '8px' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                        <img src={`${import.meta.env.BASE_URL}211.jpg`} alt="Logo Lab" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '8px' }} onError={(e) => { e.target.style.display = 'none'; }} />
                         <span style={{ color: '#ffffff', fontWeight: '800', fontSize: '16px', letterSpacing: '-0.025em' }}>Lab 211 <span style={{ color: '#3b82f6', fontWeight: '500', fontSize: '13px' }}>Management</span></span>
                     </div>
 
