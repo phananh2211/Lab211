@@ -127,8 +127,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
             
             const purposeDisplay = (existingBooking.purpose || 'Không có mô tả').replace(/\n/g, '<br/>');
             const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
-            
-            // 🌟 CHỈNH SỬA TEXT HIỂN THỊ KẾT THÚC: Bỏ ép lùi 1h trên popup, in thẳng giờ lưu dưới database 
             const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
 
             if (isMine || isAdmin || isLecturer) {
@@ -258,9 +256,15 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     </div>
 
                     <label style="display:block; font-weight: bold; margin-bottom: 5px; color: #dc2626;">Thời gian kết thúc dự kiến: *</label>
-                    <select id="swal-end-time" class="swal2-select" style="margin:0 0 15px 0; width: 100%; box-sizing: border-box; height: 42px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 6px;">
+                    <select id="swal-end-time" class="swal2-select" style="margin:0 0 5px 0; width: 100%; box-sizing: border-box; height: 42px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 6px;">
                         ${hourOptions}
                     </select>
+                    
+                    {/* 🌟 THÊM CHÚ THÍCH RÕ RÀNG ĐỂ NGƯỜI DÙNG HIỂU LOGIC TÔ MÀU */}
+                    <div style="font-size: 12.5px; color: #4b5563; margin-bottom: 15px; font-style: italic; text-align: left; padding: 0 5px;">
+                        * <b>Lưu ý:</b> Lịch sử dụng sẽ được tính đến <b>xx:59</b>.<br/>
+                        (VD: Chọn kết thúc <b>14:00</b> nghĩa là dùng máy đến <b>13:59</b>, bảng màu sẽ hiển thị phủ kín đến hết ô <b>13:00</b>).
+                    </div>
 
                     <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold; color: #1e40af; font-size: 13px;">
@@ -308,8 +312,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    // 🌟 CỘNG THÊM 1H ĐỂ TÔ KÍN Ô GIỜ ĐÓ THEO ĐÚNG YÊU CẦU NGƯỜI DÙNG HIỂU
-                    currentSlotEnd.setHours(finalEndHour + 1, 0, 0, 0);
+                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0);
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
