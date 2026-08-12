@@ -24,6 +24,9 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
 const requestNotificationPermission = async (userEmail) => {
+  // 🌟 Chặn ngay nếu chưa có email hoặc chưa có phiên xác thực hợp lệ
+  if (!userEmail) return;
+
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
@@ -714,7 +717,7 @@ export default function App() {
                                     )}
                                 </div>
 
-                                <button onClick={() => handleNavigate(currentView === 'settings' ? 'dashboard' : 'settings')} style={{ background: currentView === 'settings' ? '#2563eb' : '#f3f4f6', color: currentView === 'settings' ? 'white' : 'black', border: 'none', borderRadius: '50%', width: '38px', height: '38px', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }} title="Cài đặt tài khoản & MFA">⚙️</button>
+                                <button onClick={() => handleNavigate(currentView === 'settings' ? 'dashboard' : 'settings')} style={{ background: currentView === 'settings' ? '#2563eb' : '#f3f4f6', color: currentView === 'settings' ? 'white' : 'black', border: 'none', borderRadius: '50%', width: '38px', height: '38px', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: '0' }} title="Cài đặt tài khoản & MFA">⚙️</button>
                                 <button onClick={() => { supabase.auth.signOut(); toast.success("Đăng xuất"); }} style={{ padding: '8px 12px', cursor: 'pointer', border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', borderRadius: '8px', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}><span>Thoát</span> <span>🚪</span></button>
                             </div>
                         </div>
