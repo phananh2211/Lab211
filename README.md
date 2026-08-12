@@ -15,11 +15,11 @@
 
 ## 🌟 Tính Năng Nổi Bật
 
-* **📅 Quản lý & Đặt lịch thiết bị:** Đặt lịch theo tuần, cơ chế chống xung đột lịch bằng khóa cơ sở dữ liệu (`btree_gist`), xác thực mã PIN bảo mật khi hủy lịch.
-* **📋 Quản lý Đề tài & Nhiệm vụ:** Phân công công việc nhóm, theo dõi tiến độ hoàn thành trực quan, hỗ trợ đính kèm minh chứng báo cáo (GitHub, Overleaf, Google Drive).
-* **📦 Quản lý Kho & Vật tư tiêu hao:** Kiểm soát tồn kho hóa chất, bột gốm, linh kiện điện tử theo thời gian thực, tự động cảnh báo khi tồn kho chạm ngưỡng tối thiểu.
-* **💳 Đề xuất mua sắm & Giải ngân tài chính:** Tích hợp quét mã QR VietQR bảo mật, đồng bộ quỹ nội bộ và liên kết trực tiếp với thông tin ngân hàng cá nhân.
-* **🔔 Thông báo & Bảo mật đa lớp:** Hỗ trợ xác thực hai lớp TOTP (MFA) qua ứng dụng Authenticator và nhận thông báo thời gian thực qua Realtime/Web Push Notification (FCM).
+* **Quản lý & Đặt lịch thiết bị:** Đặt lịch theo tuần, cơ chế chống xung đột lịch bằng khóa cơ sở dữ liệu, xác thực mã PIN bảo mật khi hủy lịch.
+* **Quản lý Đề tài & Nhiệm vụ:** Phân công công việc nhóm, theo dõi tiến độ hoàn thành trực quan, hỗ trợ đính kèm minh chứng báo cáo (GitHub, Overleaf, Google Drive).
+* **Quản lý Kho & Vật tư tiêu hao:** Kiểm soát tồn kho hóa chất, bột gốm, linh kiện điện tử theo thời gian thực, tự động cảnh báo khi tồn kho chạm ngưỡng tối thiểu.
+* **Đề xuất mua sắm & Giải ngân tài chính:** Tích hợp quét mã QR VietQR bảo mật, đồng bộ quỹ nội bộ và liên kết trực tiếp với thông tin ngân hàng cá nhân.
+* **Thông báo & Bảo mật đa lớp:** Hỗ trợ xác thực hai lớp TOTP (MFA) qua ứng dụng Authenticator và nhận thông báo thời gian thực qua Realtime/Web Push Notification.
 
 ---
 
