@@ -117,10 +117,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
             }
             
             const purposeDisplay = (existingBooking.purpose || 'Không có mô tả').replace(/\n/g, '<br/>');
-            
-            // Ép chuẩn múi giờ Việt Nam khi hiển thị thời gian lên popup để tránh lệch giờ do cấu hình trình duyệt
-            const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Ho_Chi_Minh'});
-            const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Ho_Chi_Minh'});
+            const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
 
             if (isMine || isAdmin || isLecturer) {
                 if (isMine && !isSupremeAdmin) {
@@ -288,35 +286,23 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                // Lấy trực tiếp giá trị giờ kết thúc do người dùng chọn từ dropdown (tránh lỗi cộng dồn sai lệch khoảng thời gian)
-                const finalEndHour = parseInt(endHour);
+                const durationHours = parseInt(endHour) - currentHour;
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
                 const weeksToRepeat = isRepeat ? 4 : 1;
                 let hasError = false;
-
-                // Hàm chuyển đổi sang định dạng ISO giữ nguyên chuẩn múi giờ địa phương (tránh việc dùng .toISOString() làm lệch múi giờ UTC)
-                const formatLocalDateToISO = (dateObj) => {
-                    const year = dateObj.getFullYear();
-                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                    const day = String(dateObj.getDate()).padStart(2, '0');
-                    const hours = String(dateObj.getHours()).padStart(2, '0');
-                    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-                    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
-                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`;
-                };
 
                 for (let w = 0; w < weeksToRepeat; w++) {
                     const currentSlotStart = new Date(slotStart);
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0); // Gán trực tiếp giờ kết thúc chuẩn xác
+                    currentSlotEnd.setHours(currentSlotStart.getHours() + durationHours, 0, 0, 0);
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
-                        p_start: formatLocalDateToISO(currentSlotStart), 
-                        p_end: formatLocalDateToISO(currentSlotEnd),
+                        p_start: currentSlotStart.toISOString(), 
+                        p_end: currentSlotEnd.toISOString(),
                         p_purpose: isRepeat ? `${finalPurpose} (Lặp lại tuần ${w + 1}/4)` : finalPurpose
                     });
 
