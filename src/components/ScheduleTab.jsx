@@ -91,7 +91,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
         const slotTime = slotStart.getTime();
 
         return bookings.find(b => {
-            // Đọc trực tiếp thời gian từ UTC bằng cách cộng lệch giờ local để đồng bộ chính xác với giờ hiển thị trên bảng
             const bStart = new Date(b.start_time).getTime();
             const bEnd = new Date(b.end_time).getTime();
             return slotTime >= bStart && slotTime < bEnd;
@@ -118,8 +117,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
             }
             
             const purposeDisplay = (existingBooking.purpose || 'Không có mô tả').replace(/\n/g, '<br/>');
-            
-            // Ép chuẩn múi giờ Việt Nam khi hiển thị thời gian lên popup để tránh lệch giờ do cấu hình trình duyệt
             const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Ho_Chi_Minh'});
             const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Ho_Chi_Minh'});
 
@@ -289,14 +286,14 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                // Lấy trực tiếp giá trị giờ kết thúc người dùng chọn
+                // Lấy trực tiếp giá trị giờ kết thúc do người dùng chọn từ dropdown (tránh lỗi cộng dồn khoảng thời gian)
                 const finalEndHour = parseInt(endHour);
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
                 const weeksToRepeat = isRepeat ? 4 : 1;
                 let hasError = false;
 
-                // 🌟 FIX TRIỆT ĐỂ LỆCH 7 TIẾNG: Dùng ép chuẩn chuỗi YYYY-MM-DDTHH:mm:ss theo đúng giờ địa phương, loại bỏ hoàn toàn cơ chế tự quy đổi lệch múi giờ UTC của JS
+                // Hàm chuyển đổi sang định dạng chuỗi cục bộ không chứa chữ Z, giúp Supabase lưu đúng giờ địa phương tuyệt đối
                 const formatLocalDateToISO = (dateObj) => {
                     const year = dateObj.getFullYear();
                     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -312,7 +309,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0); // Gán chính xác giờ kết thúc
+                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0); // Gán trực tiếp giờ kết thúc chuẩn xác
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
