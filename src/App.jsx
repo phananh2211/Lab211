@@ -316,12 +316,7 @@ export default function App() {
           const { error } = await retryAsync(() => supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, student_id: studentId, phone_number: phone, supervisor: supervisor } } }));
           if (error) throw error;
           
-          if (phone.trim()) {
-            await supabase.from('user_private').upsert({
-              email: email.toLowerCase().trim(),
-              phone_number: phone.trim()
-            }, { onConflict: 'email' });
-          }
+          // 🌟 Không cần upsert thủ công sang user_private nữa vì phone_number đã lưu trực tiếp ở bảng users thông qua trigger handle_new_user()
 
           toast.success("🎉 Đăng ký thành công! Vui lòng kiểm tra email để bấm vào link xác nhận."); 
           setIsSignUp(false); 

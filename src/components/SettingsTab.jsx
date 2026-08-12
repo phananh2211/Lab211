@@ -155,7 +155,7 @@ export default function SettingsTab({ session, onUpdateUser }) {
 
       // Upsert vào user_private do có thể chưa có dòng dữ liệu nào lúc mới tạo tài khoản
       const { error: updatePrivateError } = await supabase
-        .from('user_private')
+        .from('users')
         .upsert({
           email: currentUser,
           phone_number: phoneNumber,
