@@ -15,10 +15,10 @@ export default function UsersManagerTab({ role }) {
 
     const fetchUsers = async () => {
         setLoading(true);
-        // 🌟 SỬA ĐỔI THEO CẤU TRÚC SQL MỚI: Lấy thông tin kèm số điện thoại từ bảng user_private
+        // 🌟 SỬA ĐỔI THEO SQL MỚI: Lấy trực tiếp phone_number từ bảng public.users (hiển thị ở mức AAL1)
         const { data, error } = await supabase
             .from('users')
-            .select('*, user_private(phone_number)')
+            .select('*')
             .order('full_name');
             
         if (error) {
@@ -110,7 +110,7 @@ export default function UsersManagerTab({ role }) {
             if (result.isConfirmed) {
                 setDeletingEmail(email);
                 
-                // 🌟 SỬA ĐỔI THEO SQL MỚI: Gọi RPC delete_user_completely để xóa sạch cả auth lẫn public profile
+                // Gọi RPC delete_user_completely để xóa sạch cả auth lẫn public profile
                 const { error } = await supabase.rpc('delete_user_completely', { p_email: email });
                     
                 if (error) {
@@ -175,9 +175,6 @@ export default function UsersManagerTab({ role }) {
                                     role === 'Lecturer' ? u.role === 'Student' : 
                                     false;
 
-                                // Lấy SĐT từ quan hệ user_private (nếu người dùng đã cập nhật)
-                                const userPhone = u.user_private?.[0]?.phone_number || u.phone_number || '-';
-
                                 return (
                                     <tr key={u.email} style={{ borderBottom: '1px solid #f1f3f5' }}>
                                         <td style={{ padding: '15px' }}>
@@ -209,7 +206,7 @@ export default function UsersManagerTab({ role }) {
 
                                         <td style={{ padding: '15px', color: '#6c757d' }}>{u.student_id || '-'}</td>
                                         <td style={{ padding: '15px', color: '#0056b3', fontWeight: '500' }}>{u.email}</td>
-                                        <td style={{ padding: '15px', color: '#6c757d' }}>{userPhone}</td>
+                                        <td style={{ padding: '15px', color: '#6c757d' }}>{u.phone_number || '-'}</td>
                                         <td style={{ padding: '15px', color: '#495057', fontSize: '14px' }}>{u.supervisor || '-'}</td>
                                         
                                         <td style={{ padding: '15px' }}>
