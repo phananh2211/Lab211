@@ -91,14 +91,9 @@ export default function ScheduleTab({ session, role, readOnly }) {
         const slotTime = slotStart.getTime();
 
         return bookings.find(b => {
-            // Đọc trực tiếp thời gian bắt đầu và kết thúc từ Database (dưới dạng giờ địa phương của chuỗi ISO)
-            const bStart = new Date(b.start_time);
-            const bEnd = new Date(b.end_time);
-            
-            const startHourTime = new Date(date).setHours(bStart.getHours(), bStart.getMinutes(), 0, 0);
-            const endHourTime = new Date(date).setHours(bEnd.getHours(), bEnd.getMinutes(), 0, 0);
-
-            return slotTime >= startHourTime && slotTime < endHourTime;
+            const bStart = new Date(b.start_time).getTime();
+            const bEnd = new Date(b.end_time).getTime();
+            return slotTime >= bStart && slotTime < bEnd;
         });
     };
 
@@ -291,6 +286,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
+                // 🌟 Lấy thẳng giá trị giờ kết thúc từ dropdown để khớp chính xác với mốc giờ trên thanh dọc
                 const finalEndHour = parseInt(endHour);
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
@@ -302,7 +298,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0);
+                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0); // Gán thẳng chuẩn xác theo giờ trên thanh dọc
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
