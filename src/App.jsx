@@ -654,7 +654,6 @@ export default function App() {
                 </div>
             </div>
         </div>
-    </>
       );
   }
 
@@ -708,7 +707,7 @@ export default function App() {
                                                     <div key={n.id} onClick={() => markAsRead(n.id)} className="notif-item" style={{ padding: '12px 14px', borderBottom: '1px solid #f3f4f6', backgroundColor: n.is_read ? 'white' : '#eff6ff', cursor: 'pointer' }}>
                                                         <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827', marginBottom: '3px' }}>{n.title}</div>
                                                         <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: '1.4' }}>{n.message}</div>
-                                                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px'}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
+                                                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                                                     </div>
                                                 ))}
                                             </div>
