@@ -13,7 +13,7 @@
 
 ---
 
-## 🌟 Tính Năng Nổi Bật
+## Tính Năng Nổi Bật
 
 * **Quản lý & Đặt lịch thiết bị:** Đặt lịch theo tuần, cơ chế chống xung đột lịch bằng khóa cơ sở dữ liệu, xác thực mã PIN bảo mật khi hủy lịch.
 * **Quản lý Đề tài & Nhiệm vụ:** Phân công công việc nhóm, theo dõi tiến độ hoàn thành trực quan, hỗ trợ đính kèm minh chứng báo cáo (GitHub, Overleaf, Google Drive).
@@ -23,7 +23,7 @@
 
 ---
 
-## ⚙️ Công Nghệ Sử Dụng
+## Công Nghệ Sử Dụng
 
 | Thành phần | Công nghệ / Thư viện |
 | :--- | :--- |
@@ -34,7 +34,7 @@
 
 ---
 
-## 📂 Cấu Trúc Thư Mục Dự Án
+## Cấu Trúc Thư Mục Dự Án
 
 ```
 ├── public/                 # Tài nguyên tĩnh & Service Worker (firebase-messaging-sw.js)
@@ -50,7 +50,7 @@
 └── README.md               # Tài liệu dự án
 ```
 
-🛠️ Hướng Dẫn Cài Đặt & Chạy Dự Án (Local Development)
+**Hướng Dẫn Cài Đặt & Chạy Dự Án**
 1. Yêu cầu chuẩn bị
 Đã cài đặt Node.js (phiên bản 18.x trở lên).
 
@@ -59,7 +59,6 @@ Có một dự án trên Supabase và đã cấu hình các bảng cơ sở dữ
 2. Các bước thiết lập
 Bước 1: Clone repository về máy
 
-Bash
 ```
 git clone https://github.com/username/lab211-management.git
 cd lab211-management
@@ -67,28 +66,26 @@ cd lab211-management
 
 Bước 2: Cài đặt các gói thư viện phụ thuộc
 
-Bash
 ```
 npm install
 ```
 
 Bước 3: Cấu hình biến môi trường
 Tạo file .env ở thư mục gốc và điền các thông số kết nối Supabase của bạn:
-Code snippet
+
 ```
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 Bước 4: Chạy ứng dụng ở môi trường phát triển
 
-Bash
 ```
 npm run dev
 ```
 Truy cập trình duyệt tại địa chỉ: http://localhost:5173
 
 ## Cơ Chế Bảo Mật & Phân Quyền
-* **Row Level Security (RLS)**: Các bảng dữ liệu áp dụng chính sách RLS khắt khe, phân tách rõ ràng giữa dữ liệu công khai (AAL1) và dữ liệu tài chính/bảo mật nhạy cảm (yêu cầu AAL2).
+* **Row Level Security**: Các bảng dữ liệu áp dụng chính sách RLS khắt khe, phân tách rõ ràng giữa dữ liệu công khai và dữ liệu tài chính/bảo mật nhạy cảm.
 
 * **Xác thực định danh**: Hệ thống chỉ chấp nhận tài khoản có đuôi @hust.edu.vn (Giảng viên) hoặc @sis.hust.edu.vn (Sinh viên) đăng ký và truy cập.
 
