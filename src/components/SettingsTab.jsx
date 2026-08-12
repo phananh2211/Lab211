@@ -31,7 +31,7 @@ export default function SettingsTab({ session, onUpdateUser }) {
   const [verifyCode, setVerifyCode] = useState('');
   const [activeFactorId, setActiveFactorId] = useState(null);
 
-  // PIN Code State (Mới: Chỉ kiểm tra xem đã có mã PIN trong user_private chưa)
+  // PIN Code State (Kiểm tra xem đã có mã PIN trong user_private chưa)
   const [hasPinCode, setHasPinCode] = useState(false);
 
   useEffect(() => {
@@ -42,30 +42,29 @@ export default function SettingsTab({ session, onUpdateUser }) {
   }, [currentUser]);
 
   const fetchUserProfile = async () => {
-    // 🌟 SỬA ĐỔI THEO SQL MỚI: Tách query làm 2 phần
-    // 1. Lấy dữ liệu công khai từ bảng `users`
+    // 1. Lấy dữ liệu công khai từ bảng `users` (bao gồm cả phone_number)[cite: 14]
     const { data: publicData } = await supabase
       .from('users')
-      .select('full_name, student_id, supervisor, avatar_url')
+      .select('full_name, phone_number, student_id, supervisor, avatar_url')
       .eq('email', currentUser)
       .single();
 
     if (publicData) {
       setFullName(publicData.full_name || '');
+      setPhoneNumber(publicData.phone_number || '');
       setStudentId(publicData.student_id || '');
       setSupervisor(publicData.supervisor || '');
       setAvatarUrl(publicData.avatar_url || '');
     }
 
-    // 2. Lấy dữ liệu nhạy cảm từ bảng `user_private` (yêu cầu AAL2 nếu đã cấu hình RLS chặt chẽ)
+    // 2. Lấy dữ liệu nhạy cảm từ bảng `user_private`[cite: 14]
     const { data: privateData } = await supabase
       .from('user_private')
-      .select('phone_number, bank_code, bank_account, pin_code')
+      .select('bank_code, bank_account, pin_code')
       .eq('email', currentUser)
       .single();
 
     if (privateData) {
-      setPhoneNumber(privateData.phone_number || '');
       setBankCode(privateData.bank_code || 'vcb');
       setBankAccount(privateData.bank_account || '');
       setHasPinCode(Boolean(privateData.pin_code));
@@ -99,7 +98,7 @@ export default function SettingsTab({ session, onUpdateUser }) {
     return true;
   };
 
-  // 1. Cập nhật Thông tin cá nhân, MSSV, Lab hướng dẫn, Ngân hàng & Avatar
+  // 1. Cập nhật Thông tin cá nhân, SĐT, MSSV, Lab hướng dẫn, Ngân hàng & Avatar
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     if (!checkRateLimit()) return;
@@ -140,11 +139,12 @@ export default function SettingsTab({ session, onUpdateUser }) {
         finalAvatarUrl = publicURLData.publicUrl;
       }
 
-      // 🌟 SỬA ĐỔI THEO SQL MỚI: Update vào 2 bảng khác nhau
+      // Cập nhật thông tin công khai (bao gồm full_name và phone_number) vào bảng `users`[cite: 14]
       const { error: updatePublicError } = await supabase
         .from('users')
         .update({
           full_name: fullName,
+          phone_number: phoneNumber,
           student_id: studentId,
           supervisor: supervisor,
           avatar_url: finalAvatarUrl
@@ -153,12 +153,11 @@ export default function SettingsTab({ session, onUpdateUser }) {
 
       if (updatePublicError) throw updatePublicError;
 
-      // Upsert vào user_private do có thể chưa có dòng dữ liệu nào lúc mới tạo tài khoản
+      // Upsert thông tin tài chính/ngân hàng vào bảng `user_private`[cite: 14]
       const { error: updatePrivateError } = await supabase
-        .from('users')
+        .from('user_private')
         .upsert({
           email: currentUser,
-          phone_number: phoneNumber,
           bank_code: bankCode,
           bank_account: bankAccount.trim()
         }, { onConflict: 'email' });
@@ -280,7 +279,6 @@ export default function SettingsTab({ session, onUpdateUser }) {
       const { password, newPin } = formValues;
       setLoading(true);
       try {
-        // 1. Xác thực mật khẩu
         const { error: signInErr } = await supabase.auth.signInWithPassword({
           email: currentUser,
           password: password
@@ -288,15 +286,10 @@ export default function SettingsTab({ session, onUpdateUser }) {
 
         if (signInErr) throw new Error("Mật khẩu tài khoản không chính xác!");
 
-        // 🌟 2. Gọi RPC hoặc gọi hàm băm bằng Postgres `crypt` thông qua một endpoint an toàn
-        // Tuy nhiên do ở frontend vẫn đang phải hash chay trước khi gửi lên (do Postgres extension pgcrypto dùng crypt để check thay vì hash hộ).
-        // Tốt nhất bạn hãy nhờ Backend (RPC SQL mới tạo) so khớp PIN thay vì update thẳng bcrypt băm tại frontend.
-        // Để linh hoạt giữ như luồng cũ nhưng lưu vào `user_private`:
-        const bcrypt = require('bcryptjs'); // Phải import lại thư viện vì đoạn đầu bị lược bỏ import
+        const bcrypt = require('bcryptjs');
         const salt = bcrypt.genSaltSync(10);
         const hashedPin = bcrypt.hashSync(newPin, salt);
 
-        // 🌟 SỬA ĐỔI: Lưu vào user_private bằng lệnh upsert
         const { error: updateErr } = await supabase
           .from('user_private')
           .upsert({ email: currentUser, pin_code: hashedPin }, { onConflict: 'email' });
