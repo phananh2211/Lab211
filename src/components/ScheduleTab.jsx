@@ -102,8 +102,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
             const bStartTime = bStart.getTime();
             const bEndTime = bEnd.getTime();
 
-            // 🌟 CỘNG THÊM 1H CHO PHẦN TÔ MÀU ĐỂ KHỚP VỚI MỐC HIỂN THỊ (7h - 13h sẽ tô từ ô 7h đến hết ô 12h)
-            return slotTime >= bStartTime && slotTime < (bEndTime - 3600000);
+            // 🌟 KHÔI PHỤC CHUẨN XÁC: Bỏ bớt lệnh -3600000 để phần tô màu khớp hoàn toàn từ 7h đến 13h (hiển thị đủ trọn vẹn các ô giờ tương ứng)
+            return slotTime >= bStartTime && slotTime < bEndTime;
         });
     };
 
@@ -307,8 +307,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    // 🌟 CỘNG THÊM 1H KHI LƯU ĐỂ PHẦN TÔ MÀU HIỂN THỊ KHỚP HOÀN TOÀN VỚI MỐC 13H TRÊN GIAO DIỆN
-                    currentSlotEnd.setHours(finalEndHour + 1, 0, 0, 0);
+                    // 🌟 BỎ CỘNG 1H KHI GỬI LÊN DB ĐỂ GIỜ KẾT THÚC LƯU ĐÚNG CHUẨN THỰC TẾ
+                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0);
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
