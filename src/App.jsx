@@ -24,7 +24,6 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
 const requestNotificationPermission = async (userEmail) => {
-  // 🌟 Chặn ngay nếu chưa có email hoặc chưa có phiên xác thực hợp lệ
   if (!userEmail) return;
 
   try {
@@ -264,6 +263,7 @@ export default function App() {
     };
   }, [session?.user?.email]);
 
+  // 🌟 Lắng nghe thông báo Realtime từ cơ sở dữ liệu đã được tối ưu để tránh nhân bản/hiện 2 lần
   useEffect(() => {
       if (!session?.user?.email || mfaRequired) return;
       const fetchNotifs = async () => {
@@ -277,8 +277,11 @@ export default function App() {
       fetchNotifs();
       const channel = supabase.channel('realtime-notifs')
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_email=eq.${session.user.email}` }, (payload) => {
-              setNotifications(prev => [payload.new, ...prev]);
-              toast(payload.new.title, { icon: '🔔', style: { borderRadius: '10px', background: '#1f2937', color: '#fff', fontSize: '14px' } });
+              setNotifications(prev => {
+                  const exists = prev.some(n => n.id === payload.new.id);
+                  if (exists) return prev;
+                  return [payload.new, ...prev];
+              });
           }).subscribe();
       return () => { supabase.removeChannel(channel); };
   }, [session?.user?.email, mfaRequired]);
@@ -391,7 +394,6 @@ export default function App() {
     }
   };
 
-  // 🌟 Thêm hàm xử lý gửi lại email xác nhận đăng ký
   const handleResendConfirmation = async () => {
     if (!email.trim()) {
       toast.error("Vui lòng nhập email trường của bạn vào ô bên trên trước!");
@@ -616,7 +618,6 @@ export default function App() {
 
                                     <button type="submit" disabled={loading} style={{ padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', marginTop: '6px', boxShadow: '0 4px 10px rgba(37,99,235,0.3)' }}>{loading ? 'Đang xử lý...' : (isSignUp ? 'Đăng ký tài khoản' : 'Đăng nhập')}</button>
                                     
-                                    {/* 🌟 Nút Gửi lại email xác nhận ở form đăng nhập */}
                                     {!isSignUp && (
                                         <div style={{ textAlign: 'center', marginTop: '2px' }}>
                                             <button 
@@ -763,11 +764,10 @@ export default function App() {
                                                             <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                                                         </div>
 
-                                                        {/* 🌟 Nút tắt / đánh dấu đã đọc nhanh ngay bên cạnh */}
                                                         {!n.is_read && (
                                                             <button 
                                                                 onClick={(e) => {
-                                                                    e.stopPropagation(); // Tránh bị dính sự kiện click vào div cha
+                                                                    e.stopPropagation(); 
                                                                     markAsRead(n.id);
                                                                 }}
                                                                 style={{ 

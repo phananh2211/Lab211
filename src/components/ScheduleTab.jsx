@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 
-export default function ScheduleTab({ session, role, readOnly }) {
+export default function ScheduleTab({ session, role, readOnly, onNavigateToSettings }) {
     const isReadOnly = readOnly || role === 'Lecturer';
     const isAdmin = role === 'Admin';
     const isLecturer = role === 'Lecturer';
@@ -133,6 +133,24 @@ export default function ScheduleTab({ session, role, readOnly }) {
             if (isMine || isAdmin || isLecturer) {
                 if (isMine && !isSupremeAdmin) {
                     
+                    // 🌟 BƯỚC MỚI: Kiểm tra trạng thái mã PIN trước khi bật hộp thoại hủy lịch[cite: 10]
+                    const { data: privateData, error: pinCheckError } = await supabase
+                        .from('user_private')
+                        .select('pin_code')
+                        .eq('email', currentUserEmail)
+                        .single();
+
+                    if (pinCheckError || !privateData?.pin_code) {
+                        Swal.fire({
+                            title: 'Chưa thiết lập mã PIN!',
+                            text: 'Bạn cần tạo mã PIN bảo mật 4 chữ số trong phần Cài đặt tài khoản trước khi có thể thực hiện thao tác hủy lịch.',
+                            icon: 'warning',
+                            confirmButtonText: 'Đã hiểu',
+                            confirmButtonColor: '#2563eb'
+                        });
+                        return;
+                    }
+
                     Swal.fire({
                         title: 'Xác nhận hủy lịch?',
                         html: `Hủy lịch của <b style="text-transform: capitalize;">${userName}</b> (${startTimeStr} - ${endTimeStr}) ngày <b>${date.toLocaleDateString('vi-VN')}</b>?<br/><br/>
