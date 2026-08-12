@@ -91,9 +91,14 @@ export default function ScheduleTab({ session, role, readOnly }) {
         const slotTime = slotStart.getTime();
 
         return bookings.find(b => {
-            const bStart = new Date(b.start_time).getTime();
-            const bEnd = new Date(b.end_time).getTime();
-            return slotTime >= bStart && slotTime < bEnd;
+            // 🌟 ĐỒNG BỘ Ô GIỜ DỌC: Trích xuất chính xác giờ cục bộ từ CSDL để so sánh đúng với các mốc giờ trên thanh dọc
+            const bStart = new Date(b.start_time);
+            const bEnd = new Date(b.end_time);
+            
+            const startHourTime = new Date(date).setHours(bStart.getHours(), bStart.getMinutes(), 0, 0);
+            const endHourTime = new Date(date).setHours(bEnd.getHours(), bEnd.getMinutes(), 0, 0);
+
+            return slotTime >= startHourTime && slotTime < endHourTime;
         });
     };
 
@@ -286,7 +291,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                // 🌟 Lấy thẳng giá trị giờ kết thúc từ dropdown để khớp chính xác với mốc giờ trên thanh dọc
                 const finalEndHour = parseInt(endHour);
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
@@ -298,7 +302,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0); // Gán thẳng chuẩn xác theo giờ trên thanh dọc
+                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0);
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
@@ -421,7 +425,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                                         <div style={{ fontSize: '12px', color: isToday ? '#2563eb' : '#9ca3af', textTransform: 'uppercase', fontWeight: isToday ? 'bold' : 'normal' }}>
                                             Thứ {idx === 6 ? 'CN' : idx + 2} {isToday && '(Hôm nay)'}
                                         </div>
-                                        <div style={{ fontWeight: 'bold', color: isToday ? '#1d4ed8' : '#1f2937', fontSize: '14px', marginTop: '2px' }}>
+                                        <div style="font-weight: bold; color: isToday ? '#1d4ed8' : '#1f2937'; fontSize: '14px'; margin-top: '2px'">
                                             {date.getDate().toString().padStart(2, '0')}/{(date.getMonth()+1).toString().padStart(2, '0')}
                                         </div>
                                     </th>
@@ -446,6 +450,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
 
                                     let isStartSlot = false;
                                     if (booking) {
+                                        // 🌟 Lấy đúng giờ bắt đầu theo múi giờ local của trình duyệt để so sánh đúng dòng ô dọc
                                         const bStartHour = new Date(booking.start_time).getHours();
                                         isStartSlot = bStartHour === parseInt(hour);
                                     }
