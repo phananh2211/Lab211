@@ -28,7 +28,7 @@ const requestNotificationPermission = async (userEmail) => {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       const currentToken = await getToken(messaging, {
-        vapidKey: 'DÁN_MÃ_VAPID_KEY_CỦA_BẠN_VÀO_ĐÂY'
+        vapidKey: 'BHGhHG1zJliTBR6Lt-VRyntLhULJQNLst5fJR9Dr7Ml9TKXklP030E2E3SrA93Nrlk_Mp3h3Accpv5huZiKRdfA'
       });
       
       if (currentToken && userEmail) {
