@@ -102,8 +102,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
             const bStartTime = bStart.getTime();
             const bEndTime = bEnd.getTime();
 
-            // 🌟 CỘNG THÊM 1H CHO PHẦN TÔ MÀU ĐỂ KHỚP VỚI MỐC HIỂN THỊ (7h - 13h sẽ tô từ ô 7h đến hết ô 12h)
-            return slotTime >= bStartTime && slotTime < (bEndTime - 3600000);
+            return slotTime >= bStartTime && slotTime < bEndTime;
         });
     };
 
@@ -129,10 +128,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
             const purposeDisplay = (existingBooking.purpose || 'Không có mô tả').replace(/\n/g, '<br/>');
             const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
             
-            // 🌟 HIỆN CHÍNH XÁC GIỜ TRÊN POPUP (Đã trừ đi 1h cộng thêm lúc nãy)
-            const trueEndTime = new Date(existingBooking.end_time);
-            trueEndTime.setHours(trueEndTime.getHours() - 1);
-            const endTimeStr = trueEndTime.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            // 🌟 CHỈNH SỬA TEXT HIỂN THỊ KẾT THÚC: Bỏ ép lùi 1h trên popup, in thẳng giờ lưu dưới database 
+            const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
 
             if (isMine || isAdmin || isLecturer) {
                 if (isMine && !isSupremeAdmin) {
@@ -311,7 +308,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    // 🌟 CỘNG THÊM 1H KHI LƯU ĐỂ PHẦN TÔ MÀU HIỂN THỊ KHỚP HOÀN TOÀN VỚI MỐC 13H TRÊN GIAO DIỆN
+                    // 🌟 CỘNG THÊM 1H ĐỂ TÔ KÍN Ô GIỜ ĐÓ THEO ĐÚNG YÊU CẦU NGƯỜI DÙNG HIỂU
                     currentSlotEnd.setHours(finalEndHour + 1, 0, 0, 0);
 
                     const { error } = await supabase.rpc('book_equipment', {
