@@ -117,6 +117,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
             }
             
             const purposeDisplay = (existingBooking.purpose || 'Không có mô tả').replace(/\n/g, '<br/>');
+            
+            // Ép chuẩn múi giờ Việt Nam khi hiển thị thời gian lên popup để tránh lệch giờ do cấu hình trình duyệt
             const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Ho_Chi_Minh'});
             const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Ho_Chi_Minh'});
 
@@ -286,14 +288,14 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                // Lấy trực tiếp giá trị giờ kết thúc do người dùng chọn từ dropdown (tránh lỗi cộng dồn khoảng thời gian)
+                // Lấy trực tiếp giá trị giờ kết thúc do người dùng chọn từ dropdown (tránh lỗi cộng dồn sai lệch khoảng thời gian)
                 const finalEndHour = parseInt(endHour);
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
                 const weeksToRepeat = isRepeat ? 4 : 1;
                 let hasError = false;
 
-                // Hàm chuyển đổi sang định dạng chuỗi cục bộ không chứa chữ Z, giúp Supabase lưu đúng giờ địa phương tuyệt đối
+                // Hàm chuyển đổi sang định dạng ISO giữ nguyên chuẩn múi giờ địa phương (tránh việc dùng .toISOString() làm lệch múi giờ UTC)
                 const formatLocalDateToISO = (dateObj) => {
                     const year = dateObj.getFullYear();
                     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -301,7 +303,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     const hours = String(dateObj.getHours()).padStart(2, '0');
                     const minutes = String(dateObj.getMinutes()).padStart(2, '0');
                     const seconds = String(dateObj.getSeconds()).padStart(2, '0');
-                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`;
                 };
 
                 for (let w = 0; w < weeksToRepeat; w++) {
