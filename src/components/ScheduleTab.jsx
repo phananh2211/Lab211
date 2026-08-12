@@ -256,8 +256,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     </select>
                     
                     <div style="font-size: 12.5px; color: #4b5563; margin-bottom: 15px; font-style: italic; text-align: left; padding: 0 5px;">
-                        * <b>Lưu ý:</b> Lịch sử dụng sẽ được tính đến <b>xx:59</b>.<br/>
-                        (VD: Chọn kết thúc <b>14:00</b> nghĩa là dùng máy đến <b>13:59</b>, bảng màu sẽ hiển thị phủ kín đến hết ô <b>13:00</b>).
+                        * <b>Lưu ý:</b> Lịch sử dụng sẽ được tính đến <b>xx:00</b>.<br/>
+                        (VD: Chọn kết thúc <b>14:00</b> nghĩa là dùng máy đến <b>13:00</b>, bảng màu sẽ hiển thị phủ kín đến hết ô <b>13:00</b>).
                     </div>
 
                     <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
