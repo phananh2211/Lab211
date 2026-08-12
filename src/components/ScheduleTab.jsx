@@ -96,15 +96,14 @@ export default function ScheduleTab({ session, role, readOnly }) {
             const bStart = new Date(b.start_time);
             const bEnd = new Date(b.end_time);
 
-            // Kiểm tra đúng ngày của booking phải khớp với ngày cột hiện tại
             const bStartDateStr = formatDateString(bStart);
             if (bStartDateStr !== targetDateStr) return false;
 
             const bStartTime = bStart.getTime();
             const bEndTime = bEnd.getTime();
 
-            // 🌟 ĐỒNG BỘ Ô GIỜ DỌC: Dùng dấu gộp [start, end) chuẩn xác để khung giờ kết thúc không bị tô tràn xuống ô dưới
-            return slotTime >= bStartTime && slotTime < bEndTime;
+            // 🌟 CỘNG THÊM 1H CHO PHẦN TÔ MÀU ĐỂ KHỚP VỚI MỐC HIỂN THỊ (7h - 13h sẽ tô từ ô 7h đến hết ô 12h)
+            return slotTime >= bStartTime && slotTime < (bEndTime - 3600000);
         });
     };
 
@@ -297,7 +296,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                // 🌟 Lấy trực tiếp giá trị giờ kết thúc từ dropdown để đồng bộ chuẩn xác với thanh dọc thời gian
                 const finalEndHour = parseInt(endHour);
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
@@ -309,7 +307,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0); // Gán chuẩn xác mốc kết thúc
+                    // 🌟 CỘNG THÊM 1H KHI LƯU ĐỂ PHẦN TÔ MÀU HIỂN THỊ KHỚP HOÀN TOÀN VỚI MỐC 13H TRÊN GIAO DIỆN
+                    currentSlotEnd.setHours(finalEndHour + 1, 0, 0, 0);
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
@@ -475,7 +474,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                                             style={{ 
                                                 borderRight: '1px solid #f3f4f6', 
                                                 borderBottom: '1px solid #f1f3f6', 
-                                                cursor: 'pointer', 
+                                                cursor: isPast && !booking ? 'not-allowed' : 'pointer', 
                                                 height: '55px', 
                                                 position: 'relative',
                                                 backgroundColor: bgColor,
