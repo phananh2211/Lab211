@@ -286,7 +286,8 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                const durationHours = parseInt(endHour) - currentHour;
+                // 🌟 Lấy thẳng giá trị giờ kết thúc từ dropdown để khớp chính xác với mốc giờ trên thanh dọc
+                const finalEndHour = parseInt(endHour);
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
                 const weeksToRepeat = isRepeat ? 4 : 1;
@@ -297,7 +298,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    currentSlotEnd.setHours(currentSlotStart.getHours() + durationHours, 0, 0, 0);
+                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0); // Gán thẳng chuẩn xác theo giờ trên thanh dọc
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
