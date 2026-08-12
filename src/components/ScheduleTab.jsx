@@ -117,8 +117,10 @@ export default function ScheduleTab({ session, role, readOnly }) {
             }
             
             const purposeDisplay = (existingBooking.purpose || 'Không có mô tả').replace(/\n/g, '<br/>');
-            const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
-            const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            
+            // Ép chuẩn múi giờ Việt Nam khi hiển thị thời gian lên popup để tránh lệch giờ do cấu hình trình duyệt
+            const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Ho_Chi_Minh'});
+            const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit', timeZone: 'Asia/Ho_Chi_Minh'});
 
             if (isMine || isAdmin || isLecturer) {
                 if (isMine && !isSupremeAdmin) {
@@ -286,7 +288,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                // Lấy trực tiếp giá trị giờ kết thúc người dùng chọn (Khắc phục lỗi lệch giờ lên 17h)
+                // Lấy trực tiếp giá trị giờ kết thúc người dùng chọn
                 const finalEndHour = parseInt(endHour);
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
