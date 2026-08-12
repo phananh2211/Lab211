@@ -313,11 +313,20 @@ export default function App() {
           if (!studentId.trim()) { toast.error("Vui lòng nhập Mã số sinh viên (MSSV)!"); setLoading(false); setIsLoggingIn(false); return; }
           if (!supervisor.trim()) { toast.error("Vui lòng điền thông tin Thuộc Lab / Đơn vị!"); setLoading(false); setIsLoggingIn(false); return; }
 
-          const { error } = await retryAsync(() => supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, student_id: studentId, phone_number: phone, supervisor: supervisor } } }));
+          const { error } = await retryAsync(() => supabase.auth.signUp({ 
+            email, 
+            password, 
+            options: { 
+              data: { 
+                full_name: fullName.trim(), 
+                student_id: studentId.trim(), 
+                phone_number: phone.trim(), 
+                supervisor: supervisor.trim() 
+              } 
+            } 
+          }));
           if (error) throw error;
           
-          // 🌟 Không cần upsert thủ công sang user_private nữa vì phone_number đã lưu trực tiếp ở bảng users thông qua trigger handle_new_user()
-
           toast.success("🎉 Đăng ký thành công! Vui lòng kiểm tra email để bấm vào link xác nhận."); 
           setIsSignUp(false); 
           setLoading(false);
@@ -644,9 +653,10 @@ export default function App() {
                     <Footer onSelectTab={handleNavigate} />
                 </div>
             </div>
-        </>
-      );
-  }
+        </div>
+    </>
+  );
+}
 
   const sessionWithRole = { ...session, role: userRole };
 
