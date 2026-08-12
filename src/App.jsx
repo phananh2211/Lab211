@@ -705,11 +705,51 @@ export default function App() {
                                                 {unreadCount > 0 && <button onClick={markAllAsRead} style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>Đã đọc tất cả</button>}
                                             </div>
                                             <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                                                {notifications.length === 0 ? <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>Chưa có thông báo nào</div> : notifications.map(n => (
-                                                    <div key={n.id} onClick={() => markAsRead(n.id)} className="notif-item" style={{ padding: '12px 14px', borderBottom: '1px solid #f3f4f6', backgroundColor: n.is_read ? 'white' : '#eff6ff', cursor: 'pointer' }}>
-                                                        <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827', marginBottom: '3px' }}>{n.title}</div>
-                                                        <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: '1.4' }}>{n.message}</div>
-                                                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
+                                                {notifications.length === 0 ? (
+                                                    <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280', fontSize: '13px' }}>Chưa có thông báo nào</div>
+                                                ) : notifications.map(n => (
+                                                    <div 
+                                                        key={n.id} 
+                                                        style={{ 
+                                                            padding: '10px 14px', 
+                                                            borderBottom: '1px solid #f3f4f6', 
+                                                            backgroundColor: n.is_read ? 'white' : '#eff6ff', 
+                                                            display: 'flex', 
+                                                            justifyContent: 'space-between', 
+                                                            alignItems: 'flex-start',
+                                                            gap: '10px'
+                                                        }}
+                                                    >
+                                                        <div onClick={() => markAsRead(n.id)} style={{ cursor: 'pointer', flex: 1 }}>
+                                                            <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827', marginBottom: '3px' }}>{n.title}</div>
+                                                            <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: '1.4' }}>{n.message}</div>
+                                                            <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
+                                                        </div>
+
+                                                        {/* 🌟 Nút tắt / đánh dấu đã đọc nhanh ngay bên cạnh */}
+                                                        {!n.is_read && (
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation(); // Tránh bị dính sự kiện click vào div cha
+                                                                    markAsRead(n.id);
+                                                                }}
+                                                                style={{ 
+                                                                    background: 'none', 
+                                                                    border: 'none', 
+                                                                    color: '#9ca3af', 
+                                                                    cursor: 'pointer', 
+                                                                    fontSize: '14px', 
+                                                                    fontWeight: 'bold',
+                                                                    padding: '0 4px',
+                                                                    borderRadius: '4px'
+                                                                }}
+                                                                title="Đánh dấu là đã đọc / Tắt thông báo này"
+                                                                onMouseEnter={e => e.target.style.color = '#ef4444'}
+                                                                onMouseLeave={e => e.target.style.color = '#9ca3af'}
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
@@ -745,7 +785,7 @@ export default function App() {
 
             </div>
 
-            <div style={{ width: '100%', flexShrink: 0, marginTop: '40px' }}>
+            <div style={{ width: '100%', flexShrink: '0', marginTop: '40px' }}>
                 <Footer onSelectTab={handleNavigate} />
             </div>
 
