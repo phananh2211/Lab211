@@ -655,8 +655,8 @@ export default function App() {
             </div>
         </div>
     </>
-  );
-}
+      );
+  }
 
   const sessionWithRole = { ...session, role: userRole };
 
@@ -708,7 +708,7 @@ export default function App() {
                                                     <div key={n.id} onClick={() => markAsRead(n.id)} className="notif-item" style={{ padding: '12px 14px', borderBottom: '1px solid #f3f4f6', backgroundColor: n.is_read ? 'white' : '#eff6ff', cursor: 'pointer' }}>
                                                         <div style={{ fontWeight: 'bold', fontSize: '13px', color: '#111827', marginBottom: '3px' }}>{n.title}</div>
                                                         <div style={{ fontSize: '12px', color: '#4b5563', lineHeight: '1.4' }}>{n.message}</div>
-                                                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
+                                                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px'}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -717,7 +717,7 @@ export default function App() {
                                 </div>
 
                                 <button onClick={() => handleNavigate(currentView === 'settings' ? 'dashboard' : 'settings')} style={{ background: currentView === 'settings' ? '#2563eb' : '#f3f4f6', color: currentView === 'settings' ? 'white' : 'black', border: 'none', borderRadius: '50%', width: '38px', height: '38px', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }} title="Cài đặt tài khoản & MFA">⚙️</button>
-                                <button onClick={() => { supabase.auth.signOut(); toast.success("Đã đăng xuất"); }} style={{ padding: '8px 12px', cursor: 'pointer', border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', borderRadius: '8px', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}><span>Thoát</span> <span>🚪</span></button>
+                                <button onClick={() => { supabase.auth.signOut(); toast.success("Đăng xuất"); }} style={{ padding: '8px 12px', cursor: 'pointer', border: '1px solid #ef4444', background: 'transparent', color: '#ef4444', borderRadius: '8px', fontWeight: '600', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}><span>Thoát</span> <span>🚪</span></button>
                             </div>
                         </div>
 
