@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
-import bcrypt from 'bcryptjs';
 import { BANK_LIST } from './bankList';
 
 export default function SettingsTab({ session, onUpdateUser }) {
@@ -32,8 +31,8 @@ export default function SettingsTab({ session, onUpdateUser }) {
   const [verifyCode, setVerifyCode] = useState('');
   const [activeFactorId, setActiveFactorId] = useState(null);
 
-  // PIN Code State
-  const [pinCode, setPinCode] = useState('');
+  // PIN Code State (Mới: Chỉ kiểm tra xem đã có mã PIN trong user_private chưa)
+  const [hasPinCode, setHasPinCode] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -43,21 +42,33 @@ export default function SettingsTab({ session, onUpdateUser }) {
   }, [currentUser]);
 
   const fetchUserProfile = async () => {
-    const { data } = await supabase
+    // 🌟 SỬA ĐỔI THEO SQL MỚI: Tách query làm 2 phần
+    // 1. Lấy dữ liệu công khai từ bảng `users`
+    const { data: publicData } = await supabase
       .from('users')
-      .select('full_name, phone_number, student_id, supervisor, avatar_url, pin_code, bank_code, bank_account')
+      .select('full_name, student_id, supervisor, avatar_url')
       .eq('email', currentUser)
       .single();
 
-    if (data) {
-      setFullName(data.full_name || '');
-      setPhoneNumber(data.phone_number || '');
-      setStudentId(data.student_id || '');
-      setSupervisor(data.supervisor || '');
-      setAvatarUrl(data.avatar_url || '');
-      setPinCode(data.pin_code || 'Chưa thiết lập mã PIN'); 
-      setBankCode(data.bank_code || 'vcb');
-      setBankAccount(data.bank_account || '');
+    if (publicData) {
+      setFullName(publicData.full_name || '');
+      setStudentId(publicData.student_id || '');
+      setSupervisor(publicData.supervisor || '');
+      setAvatarUrl(publicData.avatar_url || '');
+    }
+
+    // 2. Lấy dữ liệu nhạy cảm từ bảng `user_private` (yêu cầu AAL2 nếu đã cấu hình RLS chặt chẽ)
+    const { data: privateData } = await supabase
+      .from('user_private')
+      .select('phone_number, bank_code, bank_account, pin_code')
+      .eq('email', currentUser)
+      .single();
+
+    if (privateData) {
+      setPhoneNumber(privateData.phone_number || '');
+      setBankCode(privateData.bank_code || 'vcb');
+      setBankAccount(privateData.bank_account || '');
+      setHasPinCode(Boolean(privateData.pin_code));
     }
   };
 
@@ -129,20 +140,30 @@ export default function SettingsTab({ session, onUpdateUser }) {
         finalAvatarUrl = publicURLData.publicUrl;
       }
 
-      const { error: updateError } = await supabase
+      // 🌟 SỬA ĐỔI THEO SQL MỚI: Update vào 2 bảng khác nhau
+      const { error: updatePublicError } = await supabase
         .from('users')
         .update({
           full_name: fullName,
           student_id: studentId,
-          phone_number: phoneNumber,
           supervisor: supervisor,
-          avatar_url: finalAvatarUrl,
-          bank_code: bankCode,
-          bank_account: bankAccount.trim()
+          avatar_url: finalAvatarUrl
         })
         .eq('email', currentUser);
 
-      if (updateError) throw updateError;
+      if (updatePublicError) throw updatePublicError;
+
+      // Upsert vào user_private do có thể chưa có dòng dữ liệu nào lúc mới tạo tài khoản
+      const { error: updatePrivateError } = await supabase
+        .from('user_private')
+        .upsert({
+          email: currentUser,
+          phone_number: phoneNumber,
+          bank_code: bankCode,
+          bank_account: bankAccount.trim()
+        }, { onConflict: 'email' });
+
+      if (updatePrivateError) throw updatePrivateError;
 
       setAvatarUrl(finalAvatarUrl);
       setAvatarFile(null);
@@ -229,48 +250,19 @@ export default function SettingsTab({ session, onUpdateUser }) {
     }
   };
 
-  const handleSavePin = async (e) => {
-    e.preventDefault();
-    if (!checkRateLimit()) return;
-
-    if (!pinCode || pinCode.length !== 4 || isNaN(pinCode)) {
-      return toast.error("Mã PIN phải bao gồm đúng 4 chữ số!");
-    }
-
-    setLoading(true);
-    try {
-      const salt = bcrypt.genSaltSync(10);
-      const hashedPin = bcrypt.hashSync(pinCode, salt);
-
-      const { error } = await supabase
-        .from('users')
-        .update({ pin_code: hashedPin })
-        .eq('email', currentUser);
-
-      if (error) throw error;
-      setLastActionTime(Date.now());
-      toast.success("🔐 Đã mã hóa và cập nhật mã PIN bảo vệ lịch thành công!");
-      fetchUserProfile();
-    } catch (err) {
-      toast.error("Lỗi lưu mã PIN: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleResetPinWithPassword = async () => {
     if (!checkRateLimit()) return;
 
     const { value: formValues } = await Swal.fire({
-      title: 'Đặt lại mã PIN mới',
+      title: 'Tạo / Đặt lại mã PIN bảo mật',
       html: `
-        <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px; text-align: left;">Vì mã PIN được mã hóa bảo mật nên không thể xem lại. Vui lòng nhập mật khẩu tài khoản của bạn để xác thực:</p>
-        <input id="swal-password" type="password" class="swal2-input" placeholder="Mật khẩu tài khoản" style="width: 85%; box-sizing: border-box; margin: 0 0 10px 0;">
-        <input id="swal-new-pin" type="password" maxlength="4" class="swal2-input" placeholder="Mã PIN mới (4 chữ số)" style="width: 85%; box-sizing: border-box; letter-spacing: 4px; text-align: center; margin: 0;">
+        <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px; text-align: left;">Mã PIN dùng để xác thực các thao tác nhạy cảm (như hủy lịch). Vui lòng nhập mật khẩu tài khoản để xác thực:</p>
+        <input id="swal-password" type="password" class="swal2-input" placeholder="Mật khẩu đăng nhập Lab" style="width: 85%; box-sizing: border-box; margin: 0 0 10px 0;">
+        <input id="swal-new-pin" type="password" maxlength="4" class="swal2-input" placeholder="Nhập 4 số mã PIN" style="width: 85%; box-sizing: border-box; letter-spacing: 4px; text-align: center; margin: 0;">
       `,
       focusConfirm: false,
       showCancelButton: true,
-      confirmButtonText: 'Đổi mã PIN',
+      confirmButtonText: 'Lưu mã PIN',
       cancelButtonText: 'Hủy',
       confirmButtonColor: '#2563eb',
       preConfirm: () => {
@@ -288,6 +280,7 @@ export default function SettingsTab({ session, onUpdateUser }) {
       const { password, newPin } = formValues;
       setLoading(true);
       try {
+        // 1. Xác thực mật khẩu
         const { error: signInErr } = await supabase.auth.signInWithPassword({
           email: currentUser,
           password: password
@@ -295,21 +288,26 @@ export default function SettingsTab({ session, onUpdateUser }) {
 
         if (signInErr) throw new Error("Mật khẩu tài khoản không chính xác!");
 
+        // 🌟 2. Gọi RPC hoặc gọi hàm băm bằng Postgres `crypt` thông qua một endpoint an toàn
+        // Tuy nhiên do ở frontend vẫn đang phải hash chay trước khi gửi lên (do Postgres extension pgcrypto dùng crypt để check thay vì hash hộ).
+        // Tốt nhất bạn hãy nhờ Backend (RPC SQL mới tạo) so khớp PIN thay vì update thẳng bcrypt băm tại frontend.
+        // Để linh hoạt giữ như luồng cũ nhưng lưu vào `user_private`:
+        const bcrypt = require('bcryptjs'); // Phải import lại thư viện vì đoạn đầu bị lược bỏ import
         const salt = bcrypt.genSaltSync(10);
         const hashedPin = bcrypt.hashSync(newPin, salt);
 
+        // 🌟 SỬA ĐỔI: Lưu vào user_private bằng lệnh upsert
         const { error: updateErr } = await supabase
-          .from('users')
-          .update({ pin_code: hashedPin })
-          .eq('email', currentUser);
+          .from('user_private')
+          .upsert({ email: currentUser, pin_code: hashedPin }, { onConflict: 'email' });
 
         if (updateErr) throw updateErr;
 
         setLastActionTime(Date.now());
-        toast.success("🔐 Đã đặt lại mã PIN mới thành công!");
+        toast.success("🔐 Đã lưu mã PIN bảo vệ lịch thành công!");
         fetchUserProfile();
       } catch (err) {
-        toast.error("Lỗi đặt lại PIN: " + err.message);
+        toast.error("Lỗi thao tác: " + err.message);
       } finally {
         setLoading(false);
       }
@@ -369,7 +367,6 @@ export default function SettingsTab({ session, onUpdateUser }) {
       });
       if (verifyError) throw verifyError;
 
-      // Làm mới phiên đăng nhập để Supabase cấp lại Token mức AAL2
       await supabase.auth.refreshSession();
 
       toast.success("🛡️ Kích hoạt MFA thành công!");
@@ -390,7 +387,7 @@ export default function SettingsTab({ session, onUpdateUser }) {
   const handleUnenrollMfa = async (factorId) => {
     Swal.fire({
       title: 'Tắt xác thực đa yếu tố (MFA)?',
-      text: 'Tài khoản của bạn sẽ giảm độ bảo mật.',
+      text: 'Tài khoản của bạn sẽ giảm độ bảo mật và có thể mất quyền truy cập một số tính năng nhạy cảm.',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc3545',
@@ -413,7 +410,6 @@ export default function SettingsTab({ session, onUpdateUser }) {
     });
   };
 
-  // Lấy thông tin logo của ngân hàng hiện tại đang chọn
   const currentBankObj = BANK_LIST.find(b => b.code === bankCode);
 
   return (
@@ -505,7 +501,6 @@ export default function SettingsTab({ session, onUpdateUser }) {
             </div>
           </div>
 
-{/* 🌟 SECTION THÔNG TIN NGÂN HÀNG KÈM HIỂN THỊ ICON LOGO PHÓNG TO */}
           <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '5px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <h4 style={{ margin: 0, fontSize: '14px', color: '#1e293b' }}>💳 Thông tin tài khoản ngân hàng nhận giải ngân</h4>
@@ -648,28 +643,23 @@ export default function SettingsTab({ session, onUpdateUser }) {
       <div>
         <h3 style={{ color: '#374151', fontSize: '16px', marginBottom: '10px' }}>🔑 Mã PIN bảo vệ lịch (4 chữ số)</h3>
         <p style={{ color: '#6b7280', fontSize: '13px', marginBottom: '15px' }}>
-          Dùng để xác thực khi bạn muốn hủy lịch đăng ký thiết bị. Chuỗi mã hóa (hash) hiện tại của bạn trong cơ sở dữ liệu:
+          Mã PIN 4 số dùng để xác thực nhanh khi bạn hủy lịch thiết bị mà không cần đăng nhập lại.
         </p>
-        <form onSubmit={handleSavePin} style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
-          <div>
-            <input 
-              type="text" 
-              value={pinCode} 
-              readOnly
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#6b7280', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'monospace', textAlign: 'center' }} 
-            />
-            <span style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginTop: '4px' }}>* Để thay đổi mã PIN mới, vui lòng dùng tính năng "Quên mã PIN?" ở bên dưới.</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '400px' }}>
+          
+          <div style={{ padding: '12px', backgroundColor: hasPinCode ? '#dcfce7' : '#fee2e2', color: hasPinCode ? '#166534' : '#991b1b', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>{hasPinCode ? '✅' : '⚠️'}</span>
+            <span>{hasPinCode ? 'Tài khoản của bạn đã được bảo vệ bằng mã PIN.' : 'Chưa thiết lập mã PIN! Không thể thao tác hủy lịch.'}</span>
           </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              type="button" 
-              onClick={handleResetPinWithPassword}
-              style={{ width: '100%', padding: '10px 15px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
-            >
-              🔄 Đổi hoặc Cấp lại mã PIN mới
-            </button>
-          </div>
-        </form>
+
+          <button 
+            type="button" 
+            onClick={handleResetPinWithPassword}
+            style={{ width: '100%', padding: '10px 15px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
+          >
+            {hasPinCode ? '🔄 Đặt lại mã PIN mới' : '➕ Tạo mã PIN ngay'}
+          </button>
+        </div>
       </div>
 
     </div>

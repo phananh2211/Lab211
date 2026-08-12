@@ -48,7 +48,7 @@ export default function ProjectManagementTab({ session, role }) {
       if (projErr) throw projErr;
       if (projData) setProjects(projData);
 
-      // 2. Fetch Users
+      // 2. Fetch Users (Không đổi vì thông tin cơ bản vẫn nằm trọn vẹn ở bảng users)[cite: 15, 21]
       const { data: userData, error: userErr } = await supabase
         .from('users')
         .select('email, full_name, role')
@@ -64,7 +64,7 @@ export default function ProjectManagementTab({ session, role }) {
         ]);
       }
 
-      // 3. Fetch Tasks (Đảm bảo bảng tasks có các cột bổ sung như proof_link, comments nếu cần, hoặc lưu dạng JSON/text)
+      // 3. Fetch Tasks
       const { data: taskData, error: taskErr } = await supabase
         .from('tasks')
         .select('*')
@@ -198,7 +198,7 @@ export default function ProjectManagementTab({ session, role }) {
       assigned_to: assignedList,
       deadline: newTaskDeadline ? new Date(newTaskDeadline).toISOString() : null,
       status: 'Cần làm',
-      proof_link: newTaskLink.trim() || null // 🌟 Lưu link tài liệu/báo cáo
+      proof_link: newTaskLink.trim() || null 
     });
 
     if (error) {
@@ -324,7 +324,6 @@ export default function ProjectManagementTab({ session, role }) {
             {projects.map(p => {
               const projectTasks = tasks.filter(t => t.project_id === p.id);
               const completedTasksCount = projectTasks.filter(t => t.status === 'Hoàn thành').length;
-              // 🌟 Tính toán % Tiến độ trực quan
               const progressPercent = projectTasks.length > 0 ? Math.round((completedTasksCount / projectTasks.length) * 100) : 0;
 
               const isApproving = actionLoadingId === `approve-${p.id}`;
@@ -370,7 +369,6 @@ export default function ProjectManagementTab({ session, role }) {
                   <h4 style={{ margin: '0 0 8px 0', color: '#1f2937', fontSize: '17px' }}>{p.title}</h4>
                   <p style={{ fontSize: '13px', color: '#4b5563', marginBottom: '15px', lineHeight: '1.5' }}>{p.description || 'Không có mô tả'}</p>
                   
-                  {/* 🌟 3. THANH TIẾN ĐỘ TRỰC QUAN (PROJECT PROGRESS BAR) */}
                   <div style={{ marginBottom: '15px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 'bold', color: '#374151', marginBottom: '5px' }}>
                       <span>📊 Tiến độ hoàn thành:</span>
@@ -431,7 +429,6 @@ export default function ProjectManagementTab({ session, role }) {
               <h2 style={{ margin: '10px 0', color: '#111827', fontSize: '22px' }}>{myProject.title}</h2>
               <p style={{ color: '#4b5563', lineHeight: '1.6' }}>{myProject.description}</p>
 
-              {/* 🌟 Thanh tiến độ trực quan phía sinh viên */}
               {(() => {
                 const groupTasks = tasks.filter(t => t.project_id === myProject.id);
                 const doneCount = groupTasks.filter(t => t.status === 'Hoàn thành').length;
@@ -474,7 +471,6 @@ export default function ProjectManagementTab({ session, role }) {
                       </button>
                     </div>
 
-                    {/* 🌟 1 & 2. Khu vực hiển thị / cập nhật Link minh chứng & Ghi chú thảo luận */}
                     <div style={{ borderTop: '1px dashed #e5e7eb', paddingTop: '10px', fontSize: '13px' }}>
                       {t.proof_link && (
                         <div style={{ marginBottom: '6px' }}>
@@ -487,7 +483,6 @@ export default function ProjectManagementTab({ session, role }) {
                         </div>
                       )}
 
-                      {/* Form thu gọn để sinh viên cập nhật link báo cáo hoặc ghi chú */}
                       {editingTaskId === t.id ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', backgroundColor: '#fff', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                           <input 

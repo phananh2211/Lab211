@@ -41,7 +41,7 @@ export default function ProcurementTab({ session, role }) {
 
       const { data, error } = await supabase
         .from('procurements')
-        .select('*, users(full_name, bank_code, bank_account)')
+        .select('*, users(full_name), user_private(bank_code, bank_account)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -56,8 +56,9 @@ export default function ProcurementTab({ session, role }) {
 
   const fetchUserProfileBank = useCallback(async () => {
     if (!currentUser) return;
+    // 🌟 SỬA ĐỔI: Lấy thông tin ngân hàng từ bảng user_private thay vì users[cite: 15]
     const { data } = await supabase
-      .from('users')
+      .from('user_private')
       .select('bank_code, bank_account')
       .eq('email', currentUser)
       .single();
@@ -99,10 +100,12 @@ export default function ProcurementTab({ session, role }) {
 
     setIsSubmitting(true);
 
-    await supabase.from('users').update({
+    // 🌟 SỬA ĐỔI: Lưu thông tin ngân hàng vào bảng user_private (Upsert)[cite: 15]
+    await supabase.from('user_private').upsert({
+      email: currentUser,
       bank_code: bankCode,
       bank_account: bankAccount.trim()
-    }).eq('email', currentUser);
+    }, { onConflict: 'email' });
 
     const { error } = await supabase.from('procurements').insert({
       user_email: currentUser,
@@ -194,8 +197,9 @@ export default function ProcurementTab({ session, role }) {
   // Giảng viên / Admin duyệt và giải ngân bảo mật
   const handleReview = async (item, newStatus) => {
     if (newStatus === 'Đã giải ngân') {
-      const bCode = item.users?.bank_code;
-      const bAccount = item.users?.bank_account;
+      // 🌟 SỬA ĐỔI: Lấy thông tin ngân hàng từ quan hệ user_private
+      const bCode = item.user_private?.[0]?.bank_code;
+      const bAccount = item.user_private?.[0]?.bank_account;
       const amount = item.estimated_price || 0;
       const studentName = item.users?.full_name || item.user_email;
 

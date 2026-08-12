@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
-import bcrypt from 'bcryptjs';
 
 export default function ScheduleTab({ session, role, readOnly }) {
     const isReadOnly = readOnly || role === 'Lecturer';
@@ -19,7 +18,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // 🌟 1. State cho bộ lọc "Chỉ hiển thị lịch của tôi"
     const [showOnlyMyBookings, setShowOnlyMyBookings] = useState(false);
 
     const hours = ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'];
@@ -127,25 +125,14 @@ export default function ScheduleTab({ session, role, readOnly }) {
             
             const purposeDisplay = (existingBooking.purpose || 'Không có mô tả').replace(/\n/g, '<br/>');
             const startTimeStr = new Date(existingBooking.start_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
-            const endTimeStr = new Date(existingBooking.end_time).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
+            
+            const trueEndTime = new Date(existingBooking.end_time);
+            trueEndTime.setHours(trueEndTime.getHours() - 1);
+            const endTimeStr = trueEndTime.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
 
             if (isMine || isAdmin || isLecturer) {
                 if (isMine && !isSupremeAdmin) {
-                    const { data: userData, error: userErr } = await supabase
-                        .from('users')
-                        .select('pin_code')
-                        .eq('email', currentUserEmail)
-                        .single();
-
-                    if (userErr || !userData?.pin_code) {
-                        return Swal.fire({
-                            title: 'Chưa thiết lập mã PIN!',
-                            text: 'Bạn chưa tạo mã PIN 4 chữ số. Vui lòng vào phần "Cài đặt tài khoản" để thiết lập trước khi hủy lịch.',
-                            icon: 'warning',
-                            confirmButtonColor: '#2563eb'
-                        });
-                    }
-
+                    
                     Swal.fire({
                         title: 'Xác nhận hủy lịch?',
                         html: `Hủy lịch của <b style="text-transform: capitalize;">${userName}</b> (${startTimeStr} - ${endTimeStr}) ngày <b>${date.toLocaleDateString('vi-VN')}</b>?<br/><br/>
@@ -161,22 +148,27 @@ export default function ScheduleTab({ session, role, readOnly }) {
                         confirmButtonColor: '#dc3545',
                         cancelButtonColor: '#6c757d',
                         confirmButtonText: 'Xác nhận hủy',
-                        cancelButtonText: 'Đóng'
+                        cancelButtonText: 'Đóng',
+                        preConfirm: (pin) => {
+                            if (!pin) {
+                                Swal.showValidationMessage('Vui lòng nhập mã PIN!');
+                            }
+                            return pin;
+                        }
                     }).then(async (result) => {
                         if (result.isConfirmed) {
                             const enteredPin = result.value;
-                            const isPinValid = bcrypt.compareSync(enteredPin, userData.pin_code);
+                            
+                            const { data, error } = await supabase.rpc('delete_my_booking', {
+                                p_booking_id: existingBooking.id,
+                                p_pin: enteredPin
+                            });
 
-                            if (isPinValid) {
-                                const { error } = await supabase.from('bookings').delete().eq('id', existingBooking.id);
-                                if (error) {
-                                    toast.error("Lỗi khi hủy lịch: " + error.message);
-                                } else {
-                                    toast.success("🗑️ Đã hủy lịch thành công!");
-                                    fetchBookings();
-                                }
+                            if (error) {
+                                toast.error(`Hủy lịch thất bại: ${error.message}`);
                             } else {
-                                toast.error("❌ Mã PIN không chính xác! Không thể hủy lịch.");
+                                toast.success(data?.message || "🗑️ Đã hủy lịch thành công!");
+                                fetchBookings();
                             }
                         }
                     });
@@ -194,11 +186,15 @@ export default function ScheduleTab({ session, role, readOnly }) {
                         cancelButtonText: 'Đóng'
                     }).then(async (result) => {
                         if (result.isConfirmed) {
-                            const { error } = await supabase.from('bookings').delete().eq('id', existingBooking.id);
+                            const { data, error } = await supabase.rpc('delete_my_booking', {
+                                p_booking_id: existingBooking.id,
+                                p_pin: '' 
+                            });
+
                             if (error) {
-                                toast.error("Lỗi khi hủy lịch: " + error.message);
+                                toast.error(`Lỗi khi hủy lịch: ${error.message}`);
                             } else {
-                                toast.success("Đã hủy lịch thành công!");
+                                toast.success(data?.message || "Đã hủy lịch thành công!");
                                 fetchBookings();
                             }
                         }
@@ -232,7 +228,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
             hourOptions += `<option value="${i}">${i.toString().padStart(2, '0')}:00</option>`;
         }
 
-        // 🌟 2. Cải tiến form SweetAlert2 cho Đặt lịch nhanh nhiều khung giờ / Lặp lại hàng tuần
         Swal.fire({
             title: `Đăng ký ${selectedEquip.name}`,
             html: `
@@ -302,7 +297,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
 
                 const finalEndHour = parseInt(endHour);
                 
-                // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
                 const weeksToRepeat = isRepeat ? 4 : 1;
                 let hasError = false;
 
@@ -311,7 +305,7 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0);
+                    currentSlotEnd.setHours(finalEndHour + 1, 0, 0, 0);
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
@@ -348,7 +342,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
                 </p>
             </div>
 
-            {/* Danh sách thiết bị kết hợp 🌟 4. Trực quan hóa trạng thái thiết bị (Equipment Status Badge) */}
             <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '15px', borderBottom: '1px solid #eee', marginBottom: '20px', alignItems: 'center' }}>
                 {equipments.map(eq => {
                     const isSelected = selectedEquip?.id === eq.id;
@@ -376,14 +369,12 @@ export default function ScheduleTab({ session, role, readOnly }) {
                 })}
             </div>
 
-            {/* Điều hướng tuần và 🌟 1. Bộ lọc / Chế độ xem "Lịch của tôi" */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>
                         Tuần: {weekStart.toLocaleDateString('vi-VN')} - {weekDays[6].toLocaleDateString('vi-VN')}
                     </span>
                     
-                    {/* Checkbox lọc Lịch của tôi */}
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#eff6ff', padding: '6px 12px', borderRadius: '20px', border: '1px solid #bfdbfe', fontSize: '13px', fontWeight: '600', color: '#1e40af', cursor: 'pointer' }}>
                         <input 
                             type="checkbox" 
@@ -402,7 +393,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
                 </div>
             </div>
 
-            {/* Bảng thời khóa biểu */}
             <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid #e5e7eb', position: 'relative' }}>
                 {loading && (
                     <div style={{ 
@@ -454,7 +444,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
                                     const booking = getBookingForSlot(date, hour);
                                     const isMine = booking?.user_email === currentUserEmail;
                                     
-                                    // Xử lý bộ lọc hiển thị lịch của tôi
                                     const isDimmed = showOnlyMyBookings && booking && !isMine;
 
                                     let isStartSlot = false;

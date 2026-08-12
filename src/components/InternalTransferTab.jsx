@@ -47,14 +47,22 @@ export default function InternalTransferTab({ session }) {
     });
   }, []);
 
-  // 1. Lấy danh sách thành viên trong Lab
+  // 1. Lấy danh sách thành viên trong Lab (🌟 Sửa đổi: Join với user_private để lấy thông tin ngân hàng)[cite: 15]
   const fetchUsers = useCallback(async () => {
     const { data, error } = await supabase
       .from('users')
-      .select('email, full_name, avatar_url, bank_code, bank_account')
+      .select('email, full_name, avatar_url, user_private(bank_code, bank_account)')
       .neq('email', currentUserEmail);
     if (!error && data) {
-      setUsersList(data);
+      // Map lại cấu trúc dữ liệu cho phẳng dễ dùng ở Select
+      const formattedUsers = data.map(u => ({
+        email: u.email,
+        full_name: u.full_name,
+        avatar_url: u.avatar_url,
+        bank_code: u.user_private?.[0]?.bank_code || null,
+        bank_account: u.user_private?.[0]?.bank_account || null
+      }));
+      setUsersList(formattedUsers);
     }
   }, [currentUserEmail]);
 

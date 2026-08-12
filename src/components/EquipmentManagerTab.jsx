@@ -190,7 +190,7 @@ export default function EquipmentManagerTab() {
                         ) : equipments.length === 0 ? (
                             <tr>
                                 <td colSpan="4" style={{ padding: '30px', textAlign: 'center', color: '#adb5bd', fontStyle: 'italic' }}>
-                                    Chưa có thiết bị nào trong cơ sở dữ liệu.
+                                    Chưa có thiết bị nào trong cơ sở dữ liệu[cite: 22].
                                 </td>
                             </tr>
                         ) : (
@@ -360,7 +360,7 @@ export default function EquipmentManagerTab() {
 
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
                                 <button type="button" onClick={() => setIsEditModalOpen(false)} style={{ padding: '10px 18px', backgroundColor: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Hủy</button>
-                                <button type="submit" disabled={actionLoading} style={{ padding: '10px 18px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', opacity: actionLoading ? 0.7 : 1 }}>
+                                <button type="submit" disabled={actionSecurity || actionLoading} style={{ padding: '10px 18px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', opacity: actionLoading ? 0.7 : 1 }}>
                                     {actionLoading ? '⏳ Đang cập nhật...' : 'Lưu thay đổi'}
                                 </button>
                             </div>

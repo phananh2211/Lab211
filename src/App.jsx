@@ -6,7 +6,7 @@ import StudentDashboard from './StudentDashboard';
 import SettingsTab from './components/SettingsTab'; 
 import Footer from './components/Footer'; 
 import PublicContent from './components/PublicContent'; 
-import MfaVerification from './components/MfaVerification'; // 🌟 Đã tách component MFA
+import MfaVerification from './components/MfaVerification'; 
 import { Toaster, toast } from 'react-hot-toast';
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
@@ -316,6 +316,13 @@ export default function App() {
           const { error } = await retryAsync(() => supabase.auth.signUp({ email, password, options: { data: { full_name: fullName, student_id: studentId, phone_number: phone, supervisor: supervisor } } }));
           if (error) throw error;
           
+          if (phone.trim()) {
+            await supabase.from('user_private').upsert({
+              email: email.toLowerCase().trim(),
+              phone_number: phone.trim()
+            }, { onConflict: 'email' });
+          }
+
           toast.success("🎉 Đăng ký thành công! Vui lòng kiểm tra email để bấm vào link xác nhận."); 
           setIsSignUp(false); 
           setLoading(false);

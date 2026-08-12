@@ -14,9 +14,16 @@ export default function MfaVerification({ factorId, onVerifySuccess }) {
     }
     setLoading(true);
     try {
-      const { data: challenge } = await supabase.auth.mfa.challenge({ factorId });
+      const { data: challenge, error: challengeErr } = await supabase.auth.mfa.challenge({ factorId });
+      if (challengeErr) throw challengeErr;
+      
       const { error } = await supabase.auth.mfa.verify({ factorId, challengeId: challenge.id, code });
       if (error) throw error;
+
+      // 🌟 REFRESH SESSION: Buộc làm mới phiên để Supabase cập nhật JWT token lên AAL2
+      const { error: refreshErr } = await supabase.auth.refreshSession();
+      if (refreshErr) throw refreshErr;
+
       toast.success("🛡️ Xác thực MFA thành công!");
       onVerifySuccess();
     } catch (err) {
@@ -75,7 +82,7 @@ export default function MfaVerification({ factorId, onVerifySuccess }) {
           color: '#6b7280',
           lineHeight: '1.5'
         }}>
-          Nhập mã OTP gồm 6 chữ số từ ứng dụng <br/>Google Authenticator của bạn.
+          Nhập mã OTP gồm 6 chữ số từ ứng dụng <br/>Google Authenticator của bạn để tiếp tục.
         </p>
 
         <form onSubmit={handleVerify} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

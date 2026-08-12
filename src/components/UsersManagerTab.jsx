@@ -7,20 +7,18 @@ export default function UsersManagerTab({ role }) {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // 🌟 State quản lý loading cục bộ cho từng user theo email khi đang đổi role hoặc xóa
     const [updatingEmail, setUpdatingEmail] = useState(null);
     const [deletingEmail, setDeletingEmail] = useState(null);
 
     const isReadOnly = role === 'Student';
-    
-    // Khail báo email quản trị viên gốc (không được phép chỉnh sửa hay thay đổi)
     const ROOT_ADMIN_EMAIL = 'anh.p237957@sis.hust.edu.vn';
 
     const fetchUsers = async () => {
         setLoading(true);
+        // 🌟 SỬA ĐỔI THEO CẤU TRÚC SQL MỚI: Lấy thông tin kèm số điện thoại từ bảng user_private
         const { data, error } = await supabase
             .from('users')
-            .select('*')
+            .select('*, user_private(phone_number)')
             .order('full_name');
             
         if (error) {
@@ -35,11 +33,9 @@ export default function UsersManagerTab({ role }) {
         fetchUsers();
     }, []);
 
-    // Hàm xử lý thay đổi vai trò trực tiếp ngay tại badge Vai trò
     const handleChangeRole = async (email, currentRole, name) => {
         if (isReadOnly) return;
 
-        // Chặn tuyệt đối không cho phép đổi quyền của quản trị viên gốc
         if (email.toLowerCase() === ROOT_ADMIN_EMAIL.toLowerCase()) {
             toast.error('Quản trị viên gốc hệ thống không thể bị thay đổi quyền!');
             return;
@@ -77,7 +73,7 @@ export default function UsersManagerTab({ role }) {
         });
 
         if (newRole && newRole !== currentRole) {
-            setUpdatingEmail(email); // Bật loading cục bộ cho user này
+            setUpdatingEmail(email);
             const { error } = await supabase
                 .from('users')
                 .update({ role: newRole })
@@ -96,7 +92,6 @@ export default function UsersManagerTab({ role }) {
     const handleDeleteUser = async (email, name) => {
         if (isReadOnly) return;
 
-        // Chặn không cho xóa quản trị viên gốc
         if (email.toLowerCase() === ROOT_ADMIN_EMAIL.toLowerCase()) {
             toast.error('Không thể xóa tài khoản quản trị viên gốc của hệ thống!');
             return;
@@ -113,11 +108,10 @@ export default function UsersManagerTab({ role }) {
             cancelButtonText: 'Hủy'
         }).then(async (result) => {
             if (result.isConfirmed) {
-                setDeletingEmail(email); // Bật trạng thái xóa cục bộ
-                const { error } = await supabase
-                    .from('users')
-                    .delete()
-                    .eq('email', email);
+                setDeletingEmail(email);
+                
+                // 🌟 SỬA ĐỔI THEO SQL MỚI: Gọi RPC delete_user_completely để xóa sạch cả auth lẫn public profile
+                const { error } = await supabase.rpc('delete_user_completely', { p_email: email });
                     
                 if (error) {
                     toast.error("Lỗi khi xóa: " + error.message);
@@ -181,6 +175,9 @@ export default function UsersManagerTab({ role }) {
                                     role === 'Lecturer' ? u.role === 'Student' : 
                                     false;
 
+                                // Lấy SĐT từ quan hệ user_private (nếu người dùng đã cập nhật)
+                                const userPhone = u.user_private?.[0]?.phone_number || u.phone_number || '-';
+
                                 return (
                                     <tr key={u.email} style={{ borderBottom: '1px solid #f1f3f5' }}>
                                         <td style={{ padding: '15px' }}>
@@ -212,10 +209,9 @@ export default function UsersManagerTab({ role }) {
 
                                         <td style={{ padding: '15px', color: '#6c757d' }}>{u.student_id || '-'}</td>
                                         <td style={{ padding: '15px', color: '#0056b3', fontWeight: '500' }}>{u.email}</td>
-                                        <td style={{ padding: '15px', color: '#6c757d' }}>{u.phone_number || '-'}</td>
+                                        <td style={{ padding: '15px', color: '#6c757d' }}>{userPhone}</td>
                                         <td style={{ padding: '15px', color: '#495057', fontSize: '14px' }}>{u.supervisor || '-'}</td>
                                         
-                                        {/* Tích hợp chức năng đổi quyền trực tiếp vào cột Vai trò kèm hiệu ứng loading */}
                                         <td style={{ padding: '15px' }}>
                                             <span 
                                                 onClick={() => !isReadOnly && !isRootAdmin && !isUpdatingThis && handleChangeRole(u.email, u.role, u.full_name)}
@@ -237,7 +233,6 @@ export default function UsersManagerTab({ role }) {
                                             </span>
                                         </td>
                                         
-                                        {/* Cột Xóa kèm hiệu ứng loading */}
                                         {!isReadOnly && (
                                             <td style={{ padding: '15px', textAlign: 'center' }}>
                                                 {canDelete ? (
