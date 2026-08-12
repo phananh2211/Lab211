@@ -263,7 +263,7 @@ export default function App() {
     };
   }, [session?.user?.email]);
 
-  // 🌟 Lắng nghe thông báo Realtime từ cơ sở dữ liệu đã được tối ưu để tránh nhân bản/hiện 2 lần
+  // 🌟 Lắng nghe thông báo Realtime từ cơ sở dữ liệu
   useEffect(() => {
       if (!session?.user?.email || mfaRequired) return;
       const fetchNotifs = async () => {
@@ -290,6 +290,18 @@ export default function App() {
       await supabase.from('notifications').update({ is_read: true }).eq('id', id);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
+
+  // 🌟 Đã chuyển hàm này thành xóa vĩnh viễn khỏi Database và giao diện
+  const deleteNotification = async (id, e) => {
+      if (e) e.stopPropagation();
+      const { error } = await supabase.from('notifications').delete().eq('id', id);
+      if (error) {
+          toast.error("Không thể xóa thông báo: " + error.message);
+          return;
+      }
+      setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
   const markAllAsRead = async () => {
       await supabase.from('notifications').update({ is_read: true }).eq('user_email', session.user.email).eq('is_read', false);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
@@ -766,10 +778,7 @@ export default function App() {
 
                                                         {!n.is_read && (
                                                             <button 
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation(); 
-                                                                    markAsRead(n.id);
-                                                                }}
+                                                                onClick={(e) => deleteNotification(n.id, e)}
                                                                 style={{ 
                                                                     background: 'none', 
                                                                     border: 'none', 
@@ -780,7 +789,7 @@ export default function App() {
                                                                     padding: '0 4px',
                                                                     borderRadius: '4px'
                                                                 }}
-                                                                title="Đánh dấu là đã đọc / Tắt thông báo này"
+                                                                title="Xóa thông báo này"
                                                                 onMouseEnter={e => e.target.style.color = '#ef4444'}
                                                                 onMouseLeave={e => e.target.style.color = '#9ca3af'}
                                                             >
