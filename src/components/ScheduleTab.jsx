@@ -260,7 +260,6 @@ export default function ScheduleTab({ session, role, readOnly }) {
                         ${hourOptions}
                     </select>
                     
-                    {/* 🌟 THÊM CHÚ THÍCH RÕ RÀNG ĐỂ NGƯỜI DÙNG HIỂU LOGIC TÔ MÀU */}
                     <div style="font-size: 12.5px; color: #4b5563; margin-bottom: 15px; font-style: italic; text-align: left; padding: 0 5px;">
                         * <b>Lưu ý:</b> Lịch sử dụng sẽ được tính đến <b>xx:59</b>.<br/>
                         (VD: Chọn kết thúc <b>14:00</b> nghĩa là dùng máy đến <b>13:59</b>, bảng màu sẽ hiển thị phủ kín đến hết ô <b>13:00</b>).
