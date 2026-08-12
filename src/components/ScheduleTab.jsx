@@ -286,23 +286,35 @@ export default function ScheduleTab({ session, role, readOnly }) {
                     finalPurpose += `\n📦 Mẫu: ${material || 'Không rõ'} | Số lượng: ${quantity || 0}`;
                 }
 
-                const durationHours = parseInt(endHour) - currentHour;
+                // Lấy trực tiếp giá trị giờ kết thúc người dùng chọn (Khắc phục lỗi lệch giờ lên 17h)
+                const finalEndHour = parseInt(endHour);
                 
                 // Số tuần lặp lại (1 tuần nếu đặt thường, 4 tuần nếu chọn lặp lại)
                 const weeksToRepeat = isRepeat ? 4 : 1;
                 let hasError = false;
+
+                // Hàm chuyển đổi sang định dạng ISO giữ nguyên chuẩn múi giờ địa phương
+                const formatLocalDateToISO = (dateObj) => {
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    const hours = String(dateObj.getHours()).padStart(2, '0');
+                    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                    const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+                    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000Z`;
+                };
 
                 for (let w = 0; w < weeksToRepeat; w++) {
                     const currentSlotStart = new Date(slotStart);
                     currentSlotStart.setDate(currentSlotStart.getDate() + (w * 7));
 
                     const currentSlotEnd = new Date(currentSlotStart);
-                    currentSlotEnd.setHours(currentSlotStart.getHours() + durationHours, 0, 0, 0);
+                    currentSlotEnd.setHours(finalEndHour, 0, 0, 0); // Gán chính xác giờ kết thúc
 
                     const { error } = await supabase.rpc('book_equipment', {
                         p_equip_id: selectedEquip.id, 
-                        p_start: currentSlotStart.toISOString(), 
-                        p_end: currentSlotEnd.toISOString(),
+                        p_start: formatLocalDateToISO(currentSlotStart), 
+                        p_end: formatLocalDateToISO(currentSlotEnd),
                         p_purpose: isRepeat ? `${finalPurpose} (Lặp lại tuần ${w + 1}/4)` : finalPurpose
                     });
 
