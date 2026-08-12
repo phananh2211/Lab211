@@ -326,7 +326,7 @@ export default function App() {
             } 
           }));
           if (error) throw error;
-          
+
           toast.success("🎉 Đăng ký thành công! Vui lòng kiểm tra email để bấm vào link xác nhận."); 
           setIsSignUp(false); 
           setLoading(false);
@@ -653,7 +653,7 @@ export default function App() {
                     <Footer onSelectTab={handleNavigate} />
                 </div>
             </div>
-        </div>
+        </>
       );
   }
 
@@ -677,7 +677,6 @@ export default function App() {
             
             <div style={{ flex: '1 0 auto', width: '100%', maxWidth: '1200px', margin: '20px auto 0 auto', backgroundColor: 'white', padding: '16px 20px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', boxSizing: 'border-box' }}>
                 
-                {/* 🌟 RENDER LUỒNG CHÍNH: MFA HOẶC DASHBOARD */}
                 {mfaRequired ? (
                     <MfaVerification factorId={mfaFactorId} onVerifySuccess={() => setMfaRequired(false)} />
                 ) : (
@@ -743,7 +742,6 @@ export default function App() {
 
             </div>
 
-            {/* Footer luôn được giữ đồng bộ ở dưới cùng */}
             <div style={{ width: '100%', flexShrink: 0, marginTop: '40px' }}>
                 <Footer onSelectTab={handleNavigate} />
             </div>
