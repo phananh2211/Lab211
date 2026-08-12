@@ -34,14 +34,14 @@ export default function ProcurementTab({ session, role }) {
   const isLecturerOrAdmin = role === 'Lecturer' || role === 'Admin';
   const isLecturer = role === 'Lecturer';
 
-  // Lấy dữ liệu đề xuất mua sắm
+  // Lấy dữ liệu đề xuất mua sắm (Đã gỡ bỏ join với bảng user_private để mọi người ở AAL1 đều xem được danh sách mượt mà)
   const fetchProcurements = useCallback(async () => {
     try {
       setLoading(true);
 
       const { data, error } = await supabase
         .from('procurements')
-        .select('*, users(full_name), user_private(bank_code, bank_account)')
+        .select('*, users(full_name)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -56,7 +56,6 @@ export default function ProcurementTab({ session, role }) {
 
   const fetchUserProfileBank = useCallback(async () => {
     if (!currentUser) return;
-    // 🌟 SỬA ĐỔI: Lấy thông tin ngân hàng từ bảng user_private thay vì users[cite: 15]
     const { data } = await supabase
       .from('user_private')
       .select('bank_code, bank_account')
@@ -100,7 +99,6 @@ export default function ProcurementTab({ session, role }) {
 
     setIsSubmitting(true);
 
-    // 🌟 SỬA ĐỔI: Lưu thông tin ngân hàng vào bảng user_private (Upsert)[cite: 15]
     await supabase.from('user_private').upsert({
       email: currentUser,
       bank_code: bankCode,
@@ -197,16 +195,24 @@ export default function ProcurementTab({ session, role }) {
   // Giảng viên / Admin duyệt và giải ngân bảo mật
   const handleReview = async (item, newStatus) => {
     if (newStatus === 'Đã giải ngân') {
-      // 🌟 SỬA ĐỔI: Lấy thông tin ngân hàng từ quan hệ user_private
-      const bCode = item.user_private?.[0]?.bank_code;
-      const bAccount = item.user_private?.[0]?.bank_account;
+      setActionLoadingId(item.id);
+      // Lấy thông tin ngân hàng trực tiếp từ bảng user_private của sinh viên khi bấm giải ngân
+      const { data: privData } = await supabase
+        .from('user_private')
+        .select('bank_code, bank_account')
+        .eq('email', item.user_email)
+        .single();
+      setActionLoadingId(null);
+
+      const bCode = privData?.bank_code;
+      const bAccount = privData?.bank_account;
       const amount = item.estimated_price || 0;
       const studentName = item.users?.full_name || item.user_email;
 
       if (!bAccount || !bCode) {
         return Swal.fire({
           title: 'Chưa có thông tin ngân hàng!',
-          html: `Thành viên <b>${studentName}</b> chưa cung cấp đầy đủ thông tin tài khoản ngân hàng nhận tiền.`,
+          html: `Thành viên <b>${studentName}</b> chưa cung cấp đầy đủ thông tin tài khoản ngân hàng nhận tiền trong phần Cài đặt tài khoản.`,
           icon: 'warning',
           confirmButtonColor: '#2563eb'
         });
