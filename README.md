@@ -18,9 +18,9 @@ Hệ thống **Lab 211 Management** được phát triển nhằm tối ưu hóa
 
 ## Công Nghệ Sử Dụng
 
-* **Frontend:** React (Vite), CSS Modules / Inline Styling chuẩn responsive, SweetAlert2, React Hot Toast.
+* **Frontend:** React (Vite), CSS Modules / Inline Styling, SweetAlert2, React Hot Toast.
 * **Backend & Database:** Supabase (PostgreSQL, Row Level Security - RLS, Realtime Subscriptions, PL/pgSQL RPC Functions).
-* **Authentication:** Supabase Auth (Email xác thực miền trường `@hust.edu.vn` / `@sis.hust.edu.vn`, Multi-Factor Authentication).
+* **Authentication:** Supabase Auth (Email xác thực miền trường, Multi-Factor Authentication).
 * **Notifications:** Firebase Cloud Messaging (FCM) & Web Push API.
 
 ---
@@ -30,15 +30,17 @@ Hệ thống **Lab 211 Management** được phát triển nhằm tối ưu hóa
 ```text
 ├── public/                 # Tài nguyên tĩnh & Service Worker (firebase-messaging-sw.js)
 ├── src/
-│   ├── components/         # Các thành phần giao diện thành phần (SettingsTab, Footer, PublicContent, MfaVerification...)
-│   ├── AdminDashboard.jsx  # Bảng điều khiển dành cho Quản trị viên
-│   ├── LecturerDashboard.jsx# Bảng điều khiển dành cho Giảng viên
-│   ├── StudentDashboard.jsx# Bảng điều khiển dành cho Sinh viên
-│   ├── App.jsx             # File điều hướng chính, xác thực phiên & quản lý thông báo
-│   ├── supabaseClient.js   # Cấu hình kết nối Supabase Client
-│   └── main.jsx            # Điểm khởi chạy ứng dụng React
-├── .env                    # Biến môi trường kết nối
-└── README.md               # Tài liệu hướng dẫn dự án
+│   ├── components
+│   ├── AdminDashboard.jsx
+│   ├── LecturerDashboard.jsx
+│   ├── StudentDashboard.jsx
+│   ├── App.jsx 
+│   ├── supabaseClient.js
+│   └── main.jsx 
+├── .env
+└── README.md 
+
+
 Hướng Dẫn Cài Đặt & Chạy Dự Án (Local Development)
 1. Yêu cầu chuẩn bị
 Đã cài đặt Node.js (phiên bản 18.x trở lên).
@@ -49,7 +51,7 @@ Có một dự án trên Supabase và cấu hình các bảng cơ sở dữ li�
 Clone repository về máy:
 
 Bash
-git clone [https://github.com/username/lab211-management.git](https://github.com/username/lab211-management.git)
+git clone https://github.com/username/lab211-management.git
 cd lab211-management
 Cài đặt các gói thư viện phụ thuộc:
 
