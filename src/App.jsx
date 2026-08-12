@@ -291,15 +291,21 @@ export default function App() {
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
-  // 🌟 Đã chuyển hàm này thành xóa vĩnh viễn khỏi Database và giao diện
+  // 🌟 Hàm xóa vĩnh viễn thông báo khỏi Database dựa theo ID và email người dùng hiện tại
   const deleteNotification = async (id, e) => {
       if (e) e.stopPropagation();
-      const { error } = await supabase.from('notifications').delete().eq('id', id);
+      const { error } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('id', id)
+          .eq('user_email', session.user.email); // Đảm bảo chỉ xóa thông báo của chính tài khoản đang đăng nhập
+
       if (error) {
           toast.error("Không thể xóa thông báo: " + error.message);
           return;
       }
       setNotifications(prev => prev.filter(n => n.id !== id));
+      toast.success("Đã xóa thông báo");
   };
 
   const markAllAsRead = async () => {
@@ -776,26 +782,25 @@ export default function App() {
                                                             <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                                                         </div>
 
-                                                        {!n.is_read && (
-                                                            <button 
-                                                                onClick={(e) => deleteNotification(n.id, e)}
-                                                                style={{ 
-                                                                    background: 'none', 
-                                                                    border: 'none', 
-                                                                    color: '#9ca3af', 
-                                                                    cursor: 'pointer', 
-                                                                    fontSize: '14px', 
-                                                                    fontWeight: 'bold',
-                                                                    padding: '0 4px',
-                                                                    borderRadius: '4px'
-                                                                }}
-                                                                title="Xóa thông báo này"
-                                                                onMouseEnter={e => e.target.style.color = '#ef4444'}
-                                                                onMouseLeave={e => e.target.style.color = '#9ca3af'}
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        )}
+                                                        {/* 🌟 Nút Xóa vĩnh viễn thông báo được bảo vệ bằng RLS theo đúng email tài khoản hiện tại */}
+                                                        <button 
+                                                            onClick={(e) => deleteNotification(n.id, e)}
+                                                            style={{ 
+                                                                background: 'none', 
+                                                                border: 'none', 
+                                                                color: '#9ca3af', 
+                                                                cursor: 'pointer', 
+                                                                fontSize: '14px', 
+                                                                fontWeight: 'bold',
+                                                                padding: '0 4px',
+                                                                borderRadius: '4px'
+                                                            }}
+                                                            title="Xóa thông báo này"
+                                                            onMouseEnter={e => e.target.style.color = '#ef4444'}
+                                                            onMouseLeave={e => e.target.style.color = '#9ca3af'}
+                                                        >
+                                                            ✕
+                                                        </button>
                                                     </div>
                                                 ))}
                                             </div>
