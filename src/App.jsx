@@ -10,6 +10,29 @@ import MfaVerification from './components/MfaVerification';
 import { Toaster, toast } from 'react-hot-toast';
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
+import { z } from 'zod'; // 🌟 Import Zod
+
+// 🌟 Định nghĩa Zod Schemas cho form
+const loginSchema = z.object({
+  email: z.string().email("Email không đúng định dạng").min(1, "Vui lòng nhập email"),
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+});
+
+const signUpSchema = z.object({
+  email: z.string()
+    .email("Email không đúng định dạng")
+    .refine(val => val.endsWith('@hust.edu.vn') || val.endsWith('@sis.hust.edu.vn'), {
+      message: "Bạn phải sử dụng email trường (@sis.hust.edu.vn hoặc @hust.edu.vn)",
+    }),
+  password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+  fullName: z.string().min(2, "Vui lòng nhập Họ và Tên thật"),
+  studentId: z.string().min(1, "Vui lòng nhập Mã số sinh viên (MSSV)"),
+  supervisor: z.string().min(1, "Vui lòng điền thông tin Thuộc Lab / Đơn vị"),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Email không đúng định dạng").min(1, "Vui lòng nhập email trường"),
+});
 
 const firebaseConfig = {
   apiKey: "AIzaSyAxADQIvpmP0X9-HqzyI6n1vzcgzZ9txio",
@@ -24,7 +47,6 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
 const requestNotificationPermission = async (userEmail) => {
-  // 🌟 Chặn ngay nếu chưa có email hoặc chưa có phiên xác thực hợp lệ
   if (!userEmail) return;
 
   try {
@@ -295,9 +317,23 @@ export default function App() {
   const handleAuth = async (e) => {
     e.preventDefault();
     
-    if (isSignUp && !agreeTerms) {
-      toast.error("Bạn phải đồng ý với điều khoản sử dụng để đăng ký tài khoản!");
-      return;
+    // 🌟 Kiểm tra dữ liệu form bằng Zod trước khi gửi lên Supabase
+    if (isSignUp) {
+      const result = signUpSchema.safeParse({ email, password, fullName, studentId, supervisor });
+      if (!result.success) {
+        toast.error(result.error.errors[0].message);
+        return;
+      }
+      if (!agreeTerms) {
+        toast.error("Bạn phải đồng ý với điều khoản sử dụng để đăng ký tài khoản!");
+        return;
+      }
+    } else {
+      const result = loginSchema.safeParse({ email, password });
+      if (!result.success) {
+        toast.error(result.error.errors[0].message);
+        return;
+      }
     }
 
     setIsLoggingIn(true);
@@ -306,16 +342,6 @@ export default function App() {
     setTimeout(async () => {
       try {
         if (isSignUp) {
-          if (!email.endsWith('@hust.edu.vn') && !email.endsWith('@sis.hust.edu.vn')) { 
-              toast.error("Bạn phải sử dụng email trường (@sis.hust.edu.vn hoặc @hust.edu.vn)"); 
-              setLoading(false); 
-              setIsLoggingIn(false);
-              return; 
-          }
-          if (!fullName.trim()) { toast.error("Vui lòng điền Họ và Tên!"); setLoading(false); setIsLoggingIn(false); return; }
-          if (!studentId.trim()) { toast.error("Vui lòng nhập Mã số sinh viên (MSSV)!"); setLoading(false); setIsLoggingIn(false); return; }
-          if (!supervisor.trim()) { toast.error("Vui lòng điền thông tin Thuộc Lab / Đơn vị!"); setLoading(false); setIsLoggingIn(false); return; }
-
           const { error } = await retryAsync(() => supabase.auth.signUp({ 
             email, 
             password, 
@@ -378,6 +404,14 @@ export default function App() {
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
+    
+    // 🌟 Validate bằng Zod cho phần quên mật khẩu
+    const result = forgotPasswordSchema.safeParse({ email });
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await retryAsync(() => supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin }));
@@ -386,6 +420,29 @@ export default function App() {
       setIsForgotPassword(false); 
     } catch (err) {
       toast.error("Lỗi: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🌟 Hàm xử lý Gửi lại email xác nhận
+  const handleResendEmail = async () => {
+    if (!email) {
+      toast.error("Vui lòng điền email trường vào ô bên trên trước!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: { emailRedirectTo: window.location.origin }
+      });
+      if (error) throw error;
+      toast.success("Đã gửi lại email xác nhận! Vui lòng kiểm tra hộp thư đến hoặc hòm thư rác (Spam).");
+    } catch (err) {
+      toast.error("Không thể gửi lại email: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -593,6 +650,21 @@ export default function App() {
                                     )}
 
                                     <button type="submit" disabled={loading} style={{ padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', marginTop: '6px', boxShadow: '0 4px 10px rgba(37,99,235,0.3)' }}>{loading ? 'Đang xử lý...' : (isSignUp ? 'Đăng ký tài khoản' : 'Đăng nhập')}</button>
+                                    
+                                    {/* 🌟 Thêm nút gửi lại email xác nhận ở ngay đây */}
+                                    {!isSignUp && (
+                                        <div style={{ textAlign: 'center', marginTop: '2px' }}>
+                                            <button 
+                                                type="button" 
+                                                onClick={handleResendEmail} 
+                                                disabled={loading}
+                                                style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '12.5px', fontWeight: '600', textDecoration: 'underline' }}
+                                            >
+                                                Chưa nhận được email xác nhận? Gửi lại
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', flexWrap: 'wrap', gap: '8px' }}>
                                         {isSignUp ? (
                                             <button type="button" onClick={() => setIsSignUp(false)} style={{ background: 'none', border: 'none', color: '#1d4ed8', cursor: 'pointer', fontSize: '13px', fontWeight: '700', padding: 0 }}>← Quay lại đăng nhập</button>
@@ -726,11 +798,10 @@ export default function App() {
                                                             <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                                                         </div>
 
-                                                        {/* 🌟 Nút tắt / đánh dấu đã đọc nhanh ngay bên cạnh */}
                                                         {!n.is_read && (
                                                             <button 
                                                                 onClick={(e) => {
-                                                                    e.stopPropagation(); // Tránh bị dính sự kiện click vào div cha
+                                                                    e.stopPropagation(); 
                                                                     markAsRead(n.id);
                                                                 }}
                                                                 style={{ 
