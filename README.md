@@ -37,17 +37,17 @@
 ## Cấu Trúc Thư Mục Dự Án
 
 ```
-├── public/                 # Tài nguyên tĩnh & Service Worker (firebase-messaging-sw.js)
+├── public/                  
 ├── src/
-│   ├── components/         # Các thành phần giao diện thành phần (SettingsTab, Footer, v.v.)
-│   ├── AdminDashboard.jsx  # Bảng điều khiển Quản trị viên
-│   ├── LecturerDashboard.jsx# Bảng điều khiển Giảng viên
-│   ├── StudentDashboard.jsx# Bảng điều khiển Sinh viên
-│   ├── App.jsx             # Điều hướng chính, xác thực phiên & thông báo
-│   ├── supabaseClient.js   # Khởi tạo kết nối Supabase Client
-│   └── main.jsx            # Điểm khởi chạy React
-├── .env                    # Biến môi trường
-└── README.md               # Tài liệu dự án
+│   ├── components/       
+│   ├── AdminDashboard.jsx  
+│   ├── LecturerDashboard.jsx
+│   ├── StudentDashboard.jsx
+│   ├── App.jsx            
+│   ├── supabaseClient.js  
+│   └── main.jsx          
+├── .env             
+└── README.md       
 ```
 
 **Hướng Dẫn Cài Đặt & Chạy Dự Án**
@@ -60,8 +60,8 @@ Có một dự án trên Supabase và đã cấu hình các bảng cơ sở dữ
 Bước 1: Clone repository về máy
 
 ```
-git clone https://github.com/username/lab211-management.git
-cd lab211-management
+git clone https://github.com/phananh2211/Lab211.git
+cd Lab211
 ```
 
 Bước 2: Cài đặt các gói thư viện phụ thuộc
