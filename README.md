@@ -2,7 +2,7 @@
 
 <div align="center">
 
-  <img src="https://img.shields.io/badge/React-20.x-blue?style=for-the-badge&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/React-18.x-blue?style=for-the-badge&logo=react" alt="React" />
   <img src="https://img.shields.io/badge/Supabase-Database-green?style=for-the-badge&logo=supabase" alt="Supabase" />
   <img src="https://img.shields.io/badge/Vite-Build%20Tool-orange?style=for-the-badge&logo=vite" alt="Vite" />
   <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge" alt="Status" />
