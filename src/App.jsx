@@ -458,8 +458,9 @@ export default function App() {
       );
   }
 
-  // 🌟 ĐIỀU CHỈNH: Cho phép render trang MFA độc lập (view=mfa) ngay cả khi chưa có session hoàn chỉnh hoặc khi cần truy cập trực tiếp
-  if (!session && currentView !== 'mfa') {
+  const publicViews = ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy', 'mfa'];
+
+  if (!session && !publicViews.includes(currentView)) {
       return (
         <>
             <Toaster position="top-center" reverseOrder={false} />
@@ -728,6 +729,17 @@ export default function App() {
 
   const sessionWithRole = { ...session, role: userRole };
 
+  // 🌟 CẬP NHẬT: Phân tách dashboard của Admin, Lecturer, Student thành các view con độc lập qua ?view=
+  const renderDashboardByRole = () => {
+    if (currentView === 'admin' || userRole === 'Admin') {
+        return <AdminDashboard session={sessionWithRole} onNavigate={handleNavigate} />;
+    }
+    if (currentView === 'lecturer' || userRole === 'Lecturer') {
+        return <LecturerDashboard session={sessionWithRole} onNavigate={handleNavigate} />;
+    }
+    return <StudentDashboard session={sessionWithRole} onNavigate={handleNavigate} />;
+  };
+
   return (
     <>
         <Toaster position="top-right" reverseOrder={false} />
@@ -761,7 +773,7 @@ export default function App() {
                                 <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontSize: '16px', fontWeight: 'bold', overflow: 'hidden', border: '1px solid #d1d5db', flexShrink: 0 }}>
                                     {avatarUrl ? <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (userName || session.user.email).charAt(0).toUpperCase()}
                                 </div>
-                                <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ minWidth: '0', flex: 1 }}>
                                     <div style={{ fontSize: '15px', color: '#111827', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Xin chào, <span style={{ color: '#2563eb' }}>{userName || session.user.email}</span> </div>
                                     <div style={{ marginTop: '3px' }}><span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px', fontWeight: 'bold', backgroundColor: userRole === 'Admin' ? '#fee2e2' : (userRole === 'Lecturer' ? '#fef3c7' : '#e0f2fe'), color: userRole === 'Admin' ? '#991b1b' : (userRole === 'Lecturer' ? '#92400e' : '#075985') }}>{userRole === 'Admin' ? 'Quản trị viên' : (userRole === 'Lecturer' ? 'Giảng viên' : 'Sinh viên')}</span></div>
                                 </div>
@@ -798,7 +810,6 @@ export default function App() {
                                                             <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                                                         </div>
 
-                                                        {/* 🌟 Nút Xóa vĩnh viễn thông báo được bảo vệ bằng RLS theo đúng email tài khoản hiện tại */}
                                                         <button 
                                                             onClick={(e) => deleteNotification(n.id, e)}
                                                             style={{ 
@@ -836,17 +847,7 @@ export default function App() {
                             />
                         ) : ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? ( 
                             <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
-                        ) : userRole === 'Admin' ? (
-                            <AdminDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
-                        ) : userRole === 'Lecturer' ? (
-                            <LecturerDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
-                        ) : userRole === 'Student' ? (
-                            <StudentDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
-                        ) : (
-                            <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444', fontSize: '15px', fontWeight: '600', backgroundColor: '#fee2e2', borderRadius: '12px' }}>
-                                Tài khoản của bạn chưa được cấp quyền truy cập hợp lệ.
-                            </div>
-                        )}
+                        ) : renderDashboardByRole()}
                     </>
                 )}
 
