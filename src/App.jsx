@@ -298,7 +298,7 @@ export default function App() {
           .from('notifications')
           .delete()
           .eq('id', id)
-          .eq('user_email', session.user.email); // Đảm bảo chỉ xóa thông báo của chính tài khoản đang đăng nhập
+          .eq('user_email', session.user.email);
 
       if (error) {
           toast.error("Không thể xóa thông báo: " + error.message);
@@ -736,8 +736,14 @@ export default function App() {
             
             <div style={{ flex: '1 0 auto', width: '100%', maxWidth: '1200px', margin: '20px auto 0 auto', backgroundColor: 'white', padding: '16px 20px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', boxSizing: 'border-box' }}>
                 
-                {mfaRequired ? (
-                    <MfaVerification factorId={mfaFactorId} onVerifySuccess={() => setMfaRequired(false)} />
+                {mfaRequired || currentView === 'mfa' ? (
+                    <MfaVerification 
+                        factorId={mfaFactorId} 
+                        onVerifySuccess={() => {
+                            setMfaRequired(false);
+                            handleNavigate('dashboard');
+                        }} 
+                    />
                 ) : (
                     <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #f3f4f6', paddingBottom: '16px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>

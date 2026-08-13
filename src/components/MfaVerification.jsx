@@ -25,7 +25,14 @@ export default function MfaVerification({ factorId, onVerifySuccess }) {
       if (refreshErr) throw refreshErr;
 
       toast.success("🛡️ Xác thực MFA thành công!");
-      onVerifySuccess();
+      
+      // 🌟 Tích hợp điều hướng web con / view riêng biệt sạch sẽ
+      if (onVerifySuccess) {
+          onVerifySuccess();
+      } else {
+          window.history.pushState({}, '', window.location.pathname);
+          window.location.reload();
+      }
     } catch (err) {
       toast.error("Mã OTP không đúng: " + err.message);
     } finally {
