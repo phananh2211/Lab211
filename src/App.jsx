@@ -90,20 +90,11 @@ export default function App() {
 
   const handleNavigate = (view) => {
     setIsMobileMenuOpen(false);
-    
-    // Nếu bấm về dashboard hoặc về trang chính, tự động gán đúng tên view theo role
-    let targetView = view;
-    if (view === 'dashboard' || view === 'admin' || view === 'lecturer' || view === 'student') {
-        if (userRole === 'Admin') targetView = 'admin';
-        else if (userRole === 'Lecturer') targetView = 'lecturer';
-        else targetView = 'student';
-    }
-
-    if (currentView === targetView && !showAuthBox) return;
+    if (currentView === view && !showAuthBox) return;
     setIsTransitioning(true);
-    window.history.pushState({}, '', `?view=${targetView}`);
+    window.history.pushState({}, '', view === 'dashboard' ? window.location.pathname : `?view=${view}`);
     setTimeout(() => {
-        setCurrentView(targetView);
+        setCurrentView(view);
         setShowAuthBox(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         setIsTransitioning(false);
@@ -171,16 +162,7 @@ export default function App() {
                 }
             }
             setSession(session);
-            const role = await fetchUserInfoWithRetry(session.user.email);
-            
-            // Tự động gán view lên URL ngay khi vào app nếu chưa có hoặc đang là dashboard
-            const params = new URLSearchParams(window.location.search);
-            if (!params.get('view') || params.get('view') === 'dashboard') {
-                const defaultView = role === 'Admin' ? 'admin' : (role === 'Lecturer' ? 'lecturer' : 'student');
-                window.history.replaceState({}, '', `?view=${defaultView}`);
-                setCurrentView(defaultView);
-            }
-
+            await fetchUserInfoWithRetry(session.user.email);
             requestNotificationPermission(session.user.email);
         }
       } catch (err) {
@@ -212,14 +194,7 @@ export default function App() {
             }
           }
           setSession(session);
-          const role = await fetchUserInfoWithRetry(session.user.email);
-          
-          if (role) {
-              const defaultView = role === 'Admin' ? 'admin' : (role === 'Lecturer' ? 'lecturer' : 'student');
-              window.history.replaceState({}, '', `?view=${defaultView}`);
-              setCurrentView(defaultView);
-          }
-
+          await fetchUserInfoWithRetry(session.user.email);
           requestNotificationPermission(session.user.email);
         } catch (err) {
           console.error("Lỗi xác thực sự kiện auth:", err);
@@ -255,11 +230,9 @@ export default function App() {
           setUserRole(data.role);
           setUserName(data.full_name);
           if (data.avatar_url) setAvatarUrl(data.avatar_url);
-          return data.role;
       }
     } catch (err) {
         setUserRole('Student'); 
-        return 'Student';
     }
   };
 
@@ -290,6 +263,7 @@ export default function App() {
     };
   }, [session?.user?.email]);
 
+  // 🌟 Lắng nghe thông báo Realtime từ cơ sở dữ liệu
   useEffect(() => {
       if (!session?.user?.email || mfaRequired) return;
       const fetchNotifs = async () => {
@@ -317,6 +291,7 @@ export default function App() {
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
+  // 🌟 Hàm xóa vĩnh viễn thông báo khỏi Database dựa theo ID và email người dùng hiện tại
   const deleteNotification = async (id, e) => {
       if (e) e.stopPropagation();
       const { error } = await supabase
@@ -484,9 +459,7 @@ export default function App() {
       );
   }
 
-  const publicViews = ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy', 'mfa'];
-
-  if (!session && !publicViews.includes(currentView)) {
+  if (!session) {
       return (
         <>
             <Toaster position="top-center" reverseOrder={false} />
@@ -590,17 +563,7 @@ export default function App() {
                 </nav>
 
                 <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '110px 20px 60px 20px', boxSizing: 'border-box', position: 'relative', zIndex: 1, width: '100%' }}>
-                    {currentView === 'mfa' ? (
-                        <div className="fade-in-box" style={{ width: '100%', maxWidth: '440px' }}>
-                            <MfaVerification 
-                                factorId={mfaFactorId} 
-                                onVerifySuccess={() => {
-                                    setMfaRequired(false);
-                                    handleNavigate('dashboard');
-                                }} 
-                            />
-                        </div>
-                    ) : ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? (
+                    {['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? (
                         <div className="fade-in-box" style={{ width: '100%', maxWidth: '800px', backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(12px)', padding: '30px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)', boxSizing: 'border-box' }}>
                             <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
                         </div>
@@ -755,16 +718,6 @@ export default function App() {
 
   const sessionWithRole = { ...session, role: userRole };
 
-  const renderDashboardByRole = () => {
-    if (currentView === 'admin' || userRole === 'Admin') {
-        return <AdminDashboard session={sessionWithRole} onNavigate={handleNavigate} />;
-    }
-    if (currentView === 'lecturer' || userRole === 'Lecturer') {
-        return <LecturerDashboard session={sessionWithRole} onNavigate={handleNavigate} />;
-    }
-    return <StudentDashboard session={sessionWithRole} onNavigate={handleNavigate} />;
-  };
-
   return (
     <>
         <Toaster position="top-right" reverseOrder={false} />
@@ -798,7 +751,7 @@ export default function App() {
                                 <div style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontSize: '16px', fontWeight: 'bold', overflow: 'hidden', border: '1px solid #d1d5db', flexShrink: 0 }}>
                                     {avatarUrl ? <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (userName || session.user.email).charAt(0).toUpperCase()}
                                 </div>
-                                <div style={{ minWidth: '0', flex: 1 }}>
+                                <div style={{ minWidth: 0, flex: 1 }}>
                                     <div style={{ fontSize: '15px', color: '#111827', fontWeight: '600', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Xin chào, <span style={{ color: '#2563eb' }}>{userName || session.user.email}</span> </div>
                                     <div style={{ marginTop: '3px' }}><span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px', fontWeight: 'bold', backgroundColor: userRole === 'Admin' ? '#fee2e2' : (userRole === 'Lecturer' ? '#fef3c7' : '#e0f2fe'), color: userRole === 'Admin' ? '#991b1b' : (userRole === 'Lecturer' ? '#92400e' : '#075985') }}>{userRole === 'Admin' ? 'Quản trị viên' : (userRole === 'Lecturer' ? 'Giảng viên' : 'Sinh viên')}</span></div>
                                 </div>
@@ -835,6 +788,7 @@ export default function App() {
                                                             <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                                                         </div>
 
+                                                        {/* 🌟 Nút Xóa vĩnh viễn thông báo được bảo vệ bằng RLS theo đúng email tài khoản hiện tại */}
                                                         <button 
                                                             onClick={(e) => deleteNotification(n.id, e)}
                                                             style={{ 
@@ -872,7 +826,17 @@ export default function App() {
                             />
                         ) : ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? ( 
                             <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
-                        ) : renderDashboardByRole()}
+                        ) : userRole === 'Admin' ? (
+                            <AdminDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
+                        ) : userRole === 'Lecturer' ? (
+                            <LecturerDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
+                        ) : userRole === 'Student' ? (
+                            <StudentDashboard session={sessionWithRole} onNavigate={handleNavigate} /> 
+                        ) : (
+                            <div style={{ padding: '40px', textAlign: 'center', color: '#ef4444', fontSize: '15px', fontWeight: '600', backgroundColor: '#fee2e2', borderRadius: '12px' }}>
+                                Tài khoản của bạn chưa được cấp quyền truy cập hợp lệ.
+                            </div>
+                        )}
                     </>
                 )}
 
