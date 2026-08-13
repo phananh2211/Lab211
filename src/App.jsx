@@ -291,7 +291,6 @@ export default function App() {
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
-  // 🌟 Hàm xóa vĩnh viễn thông báo khỏi Database dựa theo ID và email người dùng hiện tại
   const deleteNotification = async (id, e) => {
       if (e) e.stopPropagation();
       const { error } = await supabase
@@ -459,7 +458,8 @@ export default function App() {
       );
   }
 
-  if (!session) {
+  // 🌟 ĐIỀU CHỈNH: Cho phép render trang MFA độc lập (view=mfa) ngay cả khi chưa có session hoàn chỉnh hoặc khi cần truy cập trực tiếp
+  if (!session && currentView !== 'mfa') {
       return (
         <>
             <Toaster position="top-center" reverseOrder={false} />
@@ -563,7 +563,17 @@ export default function App() {
                 </nav>
 
                 <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '110px 20px 60px 20px', boxSizing: 'border-box', position: 'relative', zIndex: 1, width: '100%' }}>
-                    {['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? (
+                    {currentView === 'mfa' ? (
+                        <div className="fade-in-box" style={{ width: '100%', maxWidth: '440px' }}>
+                            <MfaVerification 
+                                factorId={mfaFactorId} 
+                                onVerifySuccess={() => {
+                                    setMfaRequired(false);
+                                    handleNavigate('dashboard');
+                                }} 
+                            />
+                        </div>
+                    ) : ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? (
                         <div className="fade-in-box" style={{ width: '100%', maxWidth: '800px', backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(12px)', padding: '30px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)', boxSizing: 'border-box' }}>
                             <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
                         </div>
