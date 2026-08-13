@@ -98,7 +98,7 @@ export default function App() {
         setShowAuthBox(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         setIsTransitioning(false);
-    }, 400);
+    }, 300);
   };
 
   const handleOpenAuth = () => {
@@ -106,10 +106,9 @@ export default function App() {
     setIsTransitioning(true);
     window.history.pushState({}, '', `?auth=true`);
     setTimeout(() => {
-        setCurrentView('dashboard');
         setShowAuthBox(true);
         setIsTransitioning(false);
-    }, 400);
+    }, 300);
   };
 
   useEffect(() => {
@@ -120,7 +119,7 @@ export default function App() {
           setCurrentView(params.get('view') || 'dashboard');
           setShowAuthBox(params.get('auth') === 'true');
           setIsTransitioning(false);
-      }, 300);
+      }, 200);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -263,7 +262,6 @@ export default function App() {
     };
   }, [session?.user?.email]);
 
-  // 🌟 Lắng nghe thông báo Realtime từ cơ sở dữ liệu
   useEffect(() => {
       if (!session?.user?.email || mfaRequired) return;
       const fetchNotifs = async () => {
@@ -291,7 +289,6 @@ export default function App() {
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
-  // 🌟 Hàm xóa vĩnh viễn thông báo khỏi Database dựa theo ID và email người dùng hiện tại
   const deleteNotification = async (id, e) => {
       if (e) e.stopPropagation();
       const { error } = await supabase
@@ -459,7 +456,10 @@ export default function App() {
       );
   }
 
-  if (!session) {
+  // Cho phép render view công khai (như about, terms, privacy, mfa) ngay cả khi chưa đăng nhập session
+  const publicViews = ['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy', 'mfa'];
+
+  if (!session && !publicViews.includes(currentView)) {
       return (
         <>
             <Toaster position="top-center" reverseOrder={false} />
@@ -563,9 +563,19 @@ export default function App() {
                 </nav>
 
                 <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '110px 20px 60px 20px', boxSizing: 'border-box', position: 'relative', zIndex: 1, width: '100%' }}>
-                    {['about', 'faculty', 'research', 'projects_info', 'public_documents', 'terms', 'privacy'].includes(currentView) ? (
-                        <div className="fade-in-box" style={{ width: '100%', maxWidth: '800px', backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(12px)', padding: '30px', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)', boxSizing: 'border-box' }}>
-                            <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
+                    {publicViews.includes(currentView) ? (
+                        <div className="fade-in-box" style={{ width: '100%', maxWidth: currentView === 'mfa' ? '440px' : '800px', backgroundColor: currentView === 'mfa' ? 'transparent' : 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(12px)', padding: currentView === 'mfa' ? '0' : '30px', borderRadius: '20px', boxShadow: currentView === 'mfa' ? 'none' : '0 20px 40px rgba(0, 0, 0, 0.3)', boxSizing: 'border-box' }}>
+                            {currentView === 'mfa' ? (
+                                <MfaVerification 
+                                    factorId={mfaFactorId} 
+                                    onVerifySuccess={() => {
+                                        setMfaRequired(false);
+                                        handleNavigate('dashboard');
+                                    }} 
+                                />
+                            ) : (
+                                <PublicContent currentView={currentView} onBack={() => handleNavigate('dashboard')} />
+                            )}
                         </div>
                     ) : showAuthBox ? (
                         <div className="fade-in-box" style={{ width: '100%', maxWidth: '440px', padding: '35px 28px', backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(16px)', borderRadius: '24px', boxShadow: '0 25px 50px rgba(0,0,0,0.4)', boxSizing: 'border-box', position: 'relative' }}>
@@ -788,7 +798,6 @@ export default function App() {
                                                             <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '5px' }}>{new Date(n.created_at).toLocaleString('vi-VN')}</div>
                                                         </div>
 
-                                                        {/* 🌟 Nút Xóa vĩnh viễn thông báo được bảo vệ bằng RLS theo đúng email tài khoản hiện tại */}
                                                         <button 
                                                             onClick={(e) => deleteNotification(n.id, e)}
                                                             style={{ 
