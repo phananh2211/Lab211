@@ -90,11 +90,20 @@ export default function App() {
 
   const handleNavigate = (view) => {
     setIsMobileMenuOpen(false);
-    if (currentView === view && !showAuthBox) return;
+    
+    // Nếu bấm về dashboard hoặc về trang chính, tự động gán đúng tên view theo role
+    let targetView = view;
+    if (view === 'dashboard' || view === 'admin' || view === 'lecturer' || view === 'student') {
+        if (userRole === 'Admin') targetView = 'admin';
+        else if (userRole === 'Lecturer') targetView = 'lecturer';
+        else targetView = 'student';
+    }
+
+    if (currentView === targetView && !showAuthBox) return;
     setIsTransitioning(true);
-    window.history.pushState({}, '', view === 'dashboard' ? window.location.pathname : `?view=${view}`);
+    window.history.pushState({}, '', `?view=${targetView}`);
     setTimeout(() => {
-        setCurrentView(view);
+        setCurrentView(targetView);
         setShowAuthBox(false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         setIsTransitioning(false);
@@ -162,7 +171,16 @@ export default function App() {
                 }
             }
             setSession(session);
-            await fetchUserInfoWithRetry(session.user.email);
+            const role = await fetchUserInfoWithRetry(session.user.email);
+            
+            // Tự động gán view lên URL ngay khi vào app nếu chưa có hoặc đang là dashboard
+            const params = new URLSearchParams(window.location.search);
+            if (!params.get('view') || params.get('view') === 'dashboard') {
+                const defaultView = role === 'Admin' ? 'admin' : (role === 'Lecturer' ? 'lecturer' : 'student');
+                window.history.replaceState({}, '', `?view=${defaultView}`);
+                setCurrentView(defaultView);
+            }
+
             requestNotificationPermission(session.user.email);
         }
       } catch (err) {
@@ -194,7 +212,14 @@ export default function App() {
             }
           }
           setSession(session);
-          await fetchUserInfoWithRetry(session.user.email);
+          const role = await fetchUserInfoWithRetry(session.user.email);
+          
+          if (role) {
+              const defaultView = role === 'Admin' ? 'admin' : (role === 'Lecturer' ? 'lecturer' : 'student');
+              window.history.replaceState({}, '', `?view=${defaultView}`);
+              setCurrentView(defaultView);
+          }
+
           requestNotificationPermission(session.user.email);
         } catch (err) {
           console.error("Lỗi xác thực sự kiện auth:", err);
@@ -230,9 +255,11 @@ export default function App() {
           setUserRole(data.role);
           setUserName(data.full_name);
           if (data.avatar_url) setAvatarUrl(data.avatar_url);
+          return data.role;
       }
     } catch (err) {
         setUserRole('Student'); 
+        return 'Student';
     }
   };
 
@@ -263,7 +290,6 @@ export default function App() {
     };
   }, [session?.user?.email]);
 
-  // 🌟 Lắng nghe thông báo Realtime từ cơ sở dữ liệu
   useEffect(() => {
       if (!session?.user?.email || mfaRequired) return;
       const fetchNotifs = async () => {
@@ -729,7 +755,6 @@ export default function App() {
 
   const sessionWithRole = { ...session, role: userRole };
 
-  // 🌟 CẬP NHẬT: Phân tách dashboard của Admin, Lecturer, Student thành các view con độc lập qua ?view=
   const renderDashboardByRole = () => {
     if (currentView === 'admin' || userRole === 'Admin') {
         return <AdminDashboard session={sessionWithRole} onNavigate={handleNavigate} />;
